@@ -1,150 +1,430 @@
-﻿import asyncio
-from asyncio import StreamReader, StreamWriter
-from typing import Awaitable, Callable
+﻿from unittest.mock import AsyncMock, Mock, call
 
 import pytest
 
-from arrowhead_alarm.session import EciSession, Login
-from arrowhead_alarm.transport import TcpTransport
-# ruff: noqa
+from arrowhead_alarm.const import (
+    AUTH_LOGIN_MSG,
+    AUTH_PASSWORD_PROMPT,
+    AUTH_WELCOME_MSG,
+)
+from arrowhead_alarm.transport.authenticated_session import AuthenticatedSession, SessionState
+from arrowhead_alarm.transport.tcp import TcpDisconnected
 
 
-def login_server_handler(reader: StreamReader, writer: StreamWriter):
-    async def handle_client():
-        writer.write(b"\nlogin: ")
-        await writer.drain()
-        username = (await reader.readline()).decode().strip()
-
-        if username != "admin":
-            writer.close()
-            await writer.wait_closed()
-            return
-
-        writer.write(b"password: ")
-        await writer.drain()
-        password = (await reader.readline()).decode().strip()
-
-        if password != "admin":
-            writer.close()
-            await writer.wait_closed()
-            return
-
-        writer.write(b"\r\nWelcome\r\n")
-        await writer.drain()
-        await asyncio.sleep(1)
-        writer.close()
-        await writer.wait_closed()
-
-    return asyncio.create_task(handle_client())
+@pytest.fixture
+def transport():
+    transport = Mock()
+    transport.connect = AsyncMock()
+    transport.disconnect = AsyncMock()
+    transport.read = AsyncMock()
+    transport.write = AsyncMock()
+    transport.state_publisher = Mock()
+    transport.state_publisher.subscribe = Mock()
+    return transport
 
 
-def panel_login_with_output_oscillation_handler(
-    reader: StreamReader, writer: StreamWriter
-):
-    async def handle_client():
-        writer.write(b"\r\nWelcome\r\n")
-
-        while True:
-            writer.write(b"OO3\r\n")
-            await writer.drain()
-            await asyncio.sleep(0.2)
-            writer.write(b"OR3\r\n")
-            await writer.drain()
-            await asyncio.sleep(0.2)
-
-    return asyncio.create_task(handle_client())
+@pytest.fixture
+def credentials():
+    credentials = Mock()
+    credentials.username = "test-user"
+    credentials.password = "test-password"
+    return credentials
 
 
-def no_login_handler(reader: StreamReader, writer: StreamWriter):
-    async def handle_client():
-        writer.write(b"\r\nWelcome\r\n")
-        await writer.drain()
-        await asyncio.sleep(1)
-        writer.close()
-        await writer.wait_closed()
-
-    return asyncio.create_task(handle_client())
+@pytest.fixture
+def session(transport, credentials):
+    return AuthenticatedSession(transport, credentials)
 
 
-async def open_mock(
-    handler: Callable[[StreamReader, StreamWriter], Awaitable[None]],
-) -> tuple[str, int]:
-    server = await asyncio.start_server(handler, "127.0.0.1")
-    return server.sockets[0].getsockname()
+class TestAuthenticatedSession:
+    def test_initial_state_is_disconnected(self, session):
+        assert session.state == SessionState.DISCONNECTED
 
+    def test_set_state_changes_state(self, session):
+        session._set_state(SessionState.CONNECTED)
 
-@pytest.mark.asyncio
-class TestSession:
-    async def test_login(self):
-        host, port = await open_mock(login_server_handler)
-        conn = EciSession(
-            transport=TcpTransport(host, port),
-            credentials=Login(username="admin", password="admin"),
+        assert session.state == SessionState.CONNECTED
+
+    def test_set_state_dispatches_new_state(self, session):
+        session._set_state(SessionState.CONNECTED)
+
+        session.state_publisher.dispatch = Mock()
+
+        session._set_state(SessionState.DISCONNECTED)
+
+        session.state_publisher.dispatch.assert_called_once_with(
+            SessionState.DISCONNECTED
         )
-        try:
-            await conn.connect()
-        except Exception as e:
-            pytest.fail(f"Login failed with exception: {e}")
-        finally:
-            await conn.disconnect()
 
-    async def test_login_no_password_prompt(self):
-        host, port = await open_mock(no_login_handler)
-        conn = EciSession(
-            transport=TcpTransport(host, port),
-            credentials=Login(username="admin", password="admin"),
-        )
-        try:
-            await conn.connect()
-        except Exception as e:
-            pytest.fail(f"Login failed with exception: {e}")
-        finally:
-            await conn.disconnect()
+    def test_set_state_does_not_dispatch_when_state_is_unchanged(self, session):
+        session.state_publisher.dispatch = Mock()
 
-    async def test_login_no_password_prompt_with_creds(self):
-        host, port = await open_mock(no_login_handler)
-        conn = EciSession(
-            transport=TcpTransport(host, port),
-            credentials=Login(username="admin", password="admin"),
-        )
-        try:
-            await conn.connect()
-        except Exception as e:
-            pytest.fail(f"Login failed with exception: {e}")
-        finally:
-            await conn.disconnect()
+        session._set_state(SessionState.DISCONNECTED)
 
-    async def test_login_incorrect_credentials(self):
-        host, port = await open_mock(login_server_handler)
-        conn = EciSession(
-            transport=TcpTransport(host, port),
-            credentials=Login(username="wrong", password="wrong"),
+        session.state_publisher.dispatch.assert_not_called()
+
+    def test_transport_disconnect_sets_session_disconnected(
+        self,
+        session,
+    ):
+        session.state = SessionState.CONNECTED
+        session.state_publisher.dispatch = Mock()
+
+        session._on_transport_state_change(TcpDisconnected())
+
+        assert session.state == SessionState.DISCONNECTED
+        session.state_publisher.dispatch.assert_called_once_with(
+            SessionState.DISCONNECTED
         )
-        conn.connection_timeout = 2.0
+
+    def test_transport_disconnect_does_not_dispatch_if_already_disconnected(
+        self,
+        session,
+    ):
+        session.state_publisher.dispatch = Mock()
+
+        session._on_transport_state_change(TcpDisconnected())
+
+        assert session.state == SessionState.DISCONNECTED
+        session.state_publisher.dispatch.assert_not_called()
+
+    def test_connect_connects_transport_then_authenticates(
+        self,
+        session,
+        transport,
+    ):
+        session.authenticate = AsyncMock()
+
+        import asyncio
+
+        asyncio.run(session.connect())
+
+        transport.connect.assert_awaited_once()
+        session.authenticate.assert_awaited_once()
+
+        assert transport.connect.await_count == 1
+        assert session.authenticate.await_count == 1
+
+    @pytest.mark.asyncio
+    async def test_connect_awaits_transport_before_authentication(
+        self,
+        session,
+        transport,
+    ):
+        calls = []
+
+        async def connect():
+            calls.append("connect")
+
+        async def authenticate():
+            calls.append("authenticate")
+
+        transport.connect.side_effect = connect
+        session.authenticate = authenticate
+
+        await session.connect()
+
+        assert calls == ["connect", "authenticate"]
+
+    @pytest.mark.asyncio
+    async def test_disconnect_calls_transport_disconnect(
+        self,
+        session,
+        transport,
+    ):
+        await session.disconnect()
+
+        transport.disconnect.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_authenticate_sends_username_then_password(
+        self,
+        session,
+        transport,
+        credentials,
+    ):
+        transport.read.side_effect = [
+            AUTH_LOGIN_MSG,
+            AUTH_PASSWORD_PROMPT,
+            AUTH_WELCOME_MSG,
+        ]
+
+        await session.authenticate()
+
+        assert transport.write.await_args_list == [
+            call("test-user\n"),
+            call("test-password\n"),
+        ]
+
+    @pytest.mark.asyncio
+    async def test_authenticate_reads_three_prompts(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.side_effect = [
+            AUTH_LOGIN_MSG,
+            AUTH_PASSWORD_PROMPT,
+            AUTH_WELCOME_MSG,
+        ]
+
+        await session.authenticate()
+
+        assert transport.read.await_count == 3
+
+    @pytest.mark.asyncio
+    async def test_successful_authentication_sets_connected(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.side_effect = [
+            AUTH_LOGIN_MSG,
+            AUTH_PASSWORD_PROMPT,
+            AUTH_WELCOME_MSG,
+        ]
+        session.state_publisher.dispatch = Mock()
+
+        await session.authenticate()
+
+        assert session.state == SessionState.CONNECTED
+        session.state_publisher.dispatch.assert_called_once_with(
+            SessionState.CONNECTED
+        )
+
+    @pytest.mark.asyncio
+    async def test_successful_authentication_does_not_write_before_login_prompt(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.side_effect = [
+            AUTH_LOGIN_MSG,
+            AUTH_PASSWORD_PROMPT,
+            AUTH_WELCOME_MSG,
+        ]
+
+        await session.authenticate()
+
+        assert transport.write.await_args_list[0] == call(
+            "test-user\n"
+        )
+
+    @pytest.mark.asyncio
+    async def test_login_prompt_must_be_present(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.return_value = "unexpected prompt"
+
+        with pytest.raises(Exception, match="Authentication failed"):
+            await session.authenticate()
+
+        transport.write.assert_not_awaited()
+        assert transport.read.await_count == 1
+
+    @pytest.mark.asyncio
+    async def test_password_prompt_must_be_present(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.side_effect = [
+            AUTH_LOGIN_MSG,
+            "unexpected prompt",
+        ]
+
+        with pytest.raises(
+            Exception,
+            match="Password prompt not received",
+        ):
+            await session.authenticate()
+
+        assert transport.write.await_args_list == [
+            call("test-user\n"),
+        ]
+        assert transport.read.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_welcome_message_must_be_present(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.side_effect = [
+            AUTH_LOGIN_MSG,
+            AUTH_PASSWORD_PROMPT,
+            "authentication failed",
+        ]
+
+        with pytest.raises(
+            Exception,
+            match="Waiting credentials",
+        ):
+            await session.authenticate()
+
+        assert transport.write.await_args_list == [
+            call("test-user\n"),
+            call("test-password\n"),
+        ]
+        assert transport.read.await_count == 3
+
+    @pytest.mark.asyncio
+    async def test_failed_authentication_does_not_set_connected(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.side_effect = [
+            AUTH_LOGIN_MSG,
+            AUTH_PASSWORD_PROMPT,
+            "authentication failed",
+        ]
+
         with pytest.raises(Exception):
-            await conn.connect()
-        await conn.disconnect()
+            await session.authenticate()
 
-    async def test_panel_login_with_output_oscillation(self):
-        host, port = await open_mock(panel_login_with_output_oscillation_handler)
-        conn = EciSession(
-            transport=TcpTransport(host, port),
-            credentials=Login(username="admin", password="admin"),
+        assert session.state == SessionState.DISCONNECTED
+
+    @pytest.mark.asyncio
+    async def test_missing_login_prompt_does_not_set_connected(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.return_value = "something else"
+
+        with pytest.raises(Exception):
+            await session.authenticate()
+
+        assert session.state == SessionState.DISCONNECTED
+
+    @pytest.mark.asyncio
+    async def test_username_is_written_with_newline(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.side_effect = [
+            AUTH_LOGIN_MSG,
+            AUTH_PASSWORD_PROMPT,
+            AUTH_WELCOME_MSG,
+        ]
+
+        await session.authenticate()
+
+        transport.write.assert_any_await("test-user\n")
+
+    @pytest.mark.asyncio
+    async def test_password_is_written_with_newline(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.side_effect = [
+            AUTH_LOGIN_MSG,
+            AUTH_PASSWORD_PROMPT,
+            AUTH_WELCOME_MSG,
+        ]
+
+        await session.authenticate()
+
+        transport.write.assert_any_await("test-password\n")
+
+    @pytest.mark.asyncio
+    async def test_authentication_sequence_is_exactly_correct(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.side_effect = [
+            AUTH_LOGIN_MSG,
+            AUTH_PASSWORD_PROMPT,
+            AUTH_WELCOME_MSG,
+        ]
+
+        await session.authenticate()
+
+        assert transport.mock_calls == [
+            call.read(),
+            call.write("test-user\n"),
+            call.read(),
+            call.write("test-password\n"),
+            call.read(),
+        ]
+
+    @pytest.mark.asyncio
+    async def test_login_message_can_be_embedded_in_prompt(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.side_effect = [
+            f"banner\r\n{AUTH_LOGIN_MSG}\r\n",
+            f"{AUTH_PASSWORD_PROMPT}:",
+            f"Some text {AUTH_WELCOME_MSG} some text",
+        ]
+
+        await session.authenticate()
+
+        assert session.state == SessionState.CONNECTED
+
+    @pytest.mark.asyncio
+    async def test_password_prompt_can_be_embedded_in_response(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.side_effect = [
+            AUTH_LOGIN_MSG,
+            f"prefix {AUTH_PASSWORD_PROMPT} suffix",
+            AUTH_WELCOME_MSG,
+        ]
+
+        await session.authenticate()
+
+        assert session.state == SessionState.CONNECTED
+
+    @pytest.mark.asyncio
+    async def test_welcome_message_can_be_embedded_in_response(
+        self,
+        session,
+        transport,
+    ):
+        transport.read.side_effect = [
+            AUTH_LOGIN_MSG,
+            AUTH_PASSWORD_PROMPT,
+            f"prefix {AUTH_WELCOME_MSG} suffix",
+        ]
+
+        await session.authenticate()
+
+        assert session.state == SessionState.CONNECTED
+
+    @pytest.mark.asyncio
+    async def test_transport_connect_failure_does_not_authenticate(
+        self,
+        session,
+        transport,
+    ):
+        session.authenticate = AsyncMock()
+        transport.connect.side_effect = RuntimeError("connection failed")
+
+        with pytest.raises(RuntimeError, match="connection failed"):
+            await session.connect()
+
+        session.authenticate.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_transport_disconnect_failure_is_propagated(
+        self,
+        session,
+        transport,
+    ):
+        transport.disconnect.side_effect = RuntimeError(
+            "disconnect failed"
         )
-        message_count = 0
 
-        async def loop():
-            nonlocal message_count
-            while True:
-                await conn.readline("\r\n", timeout=2.0)
-                message_count += 1
-
-        try:
-            await conn.connect()
-            asyncio.create_task(loop())
-            await asyncio.sleep(1)
-            assert message_count >= 4, "Expected at least 4 messages during oscillation"
-        except Exception as e:
-            pytest.fail(f"Login failed with exception: {e}")
-        finally:
-            await conn.disconnect()
+        with pytest.raises(RuntimeError, match="disconnect failed"):
+            await session.disconnect()

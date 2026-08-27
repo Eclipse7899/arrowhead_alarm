@@ -40,7 +40,7 @@ jobs:
         run: ty check --output-format=github .
 
       - name: Run tests
-        run: uv run pytest tests
+        run: uv _collector pytest tests
 
   release-build:
     runs-on: ubuntu-latest

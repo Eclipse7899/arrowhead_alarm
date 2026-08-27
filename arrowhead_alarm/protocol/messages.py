@@ -2,7 +2,7 @@
 
 from typing import Callable, Final
 
-from arrowhead_alarm.types import (
+from arrowhead_alarm.protocol.models import (
     EXPANDER_STATUS,
     NUMBERED_STATUS,
     STATUS_CODE,
@@ -10,12 +10,12 @@ from arrowhead_alarm.types import (
     USER_STATUS,
     AlarmState,
     PanelState,
-    Status,
+    StatusResponse,
 )
 
 
 def set_panel_ready(panel: PanelState) -> None:
-    """Set the panel status to ready.
+    """Set the panel status_response to ready.
 
     Args:
         panel: PanelState object to mutate.
@@ -25,7 +25,7 @@ def set_panel_ready(panel: PanelState) -> None:
 
 
 def set_panel_not_ready(panel: PanelState) -> None:
-    """Set the panel status to not ready.
+    """Set the panel status_response to not ready.
 
     Args:
         panel: PanelState object to mutate.
@@ -35,7 +35,7 @@ def set_panel_not_ready(panel: PanelState) -> None:
 
 
 def set_battery_fault(panel: PanelState) -> None:
-    """Set the battery fault status.
+    """Set the battery fault status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -45,7 +45,7 @@ def set_battery_fault(panel: PanelState) -> None:
 
 
 def clear_battery_fault(panel: PanelState) -> None:
-    """Clear the battery fault status.
+    """Clear the battery fault status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -55,7 +55,7 @@ def clear_battery_fault(panel: PanelState) -> None:
 
 
 def set_monitoring_station_active(panel: PanelState) -> None:
-    """Set the monitoring station status to active.
+    """Set the monitoring station status_response to active.
 
     Args:
         panel: PanelState object to mutate.
@@ -65,7 +65,7 @@ def set_monitoring_station_active(panel: PanelState) -> None:
 
 
 def set_monitoring_station_inactive(panel: PanelState) -> None:
-    """Set the monitoring station status to inactive.
+    """Set the monitoring station status_response to inactive.
 
     Args:
         panel: PanelState object to mutate.
@@ -75,7 +75,7 @@ def set_monitoring_station_inactive(panel: PanelState) -> None:
 
 
 def set_dialer_fault(panel: PanelState) -> None:
-    """Set the dialer fault status.
+    """Set the dialer fault status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -85,7 +85,7 @@ def set_dialer_fault(panel: PanelState) -> None:
 
 
 def clear_dialer_fault(panel: PanelState) -> None:
-    """Clear the dialer fault status.
+    """Clear the dialer fault status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -95,7 +95,7 @@ def clear_dialer_fault(panel: PanelState) -> None:
 
 
 def set_dialer_line_fault(panel: PanelState) -> None:
-    """Set the dialer line fault status.
+    """Set the dialer line fault status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -105,7 +105,7 @@ def set_dialer_line_fault(panel: PanelState) -> None:
 
 
 def clear_dialer_line_fault(panel: PanelState) -> None:
-    """Clear the dialer line fault status.
+    """Clear the dialer line fault status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -115,7 +115,7 @@ def clear_dialer_line_fault(panel: PanelState) -> None:
 
 
 def set_mains_fault(panel: PanelState) -> None:
-    """Set the mains fault status.
+    """Set the mains fault status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -125,7 +125,7 @@ def set_mains_fault(panel: PanelState) -> None:
 
 
 def clear_mains_fault(panel: PanelState) -> None:
-    """Clear the mains fault status.
+    """Clear the mains fault status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -135,7 +135,7 @@ def clear_mains_fault(panel: PanelState) -> None:
 
 
 def set_tamper_alarm_triggered(panel: PanelState) -> None:
-    """Set the tamper alarm status.
+    """Set the tamper alarm status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -145,7 +145,7 @@ def set_tamper_alarm_triggered(panel: PanelState) -> None:
 
 
 def clear_tamper_alarm_triggered(panel: PanelState) -> None:
-    """Clear the tamper alarm status.
+    """Clear the tamper alarm status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -155,7 +155,7 @@ def clear_tamper_alarm_triggered(panel: PanelState) -> None:
 
 
 def set_fuse_fault(panel: PanelState) -> None:
-    """Set the fuse fault status.
+    """Set the fuse fault status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -165,7 +165,7 @@ def set_fuse_fault(panel: PanelState) -> None:
 
 
 def clear_fuse_fault(panel: PanelState) -> None:
-    """Clear the fuse fault status.
+    """Clear the fuse fault status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -190,21 +190,21 @@ def set_area_armed_stay(area_number: int, panel: PanelState) -> None:
 
 
 def set_area_arming_away(
-    area_number: int, exit_delay: float, panel: PanelState
+        area_number: int, exit_delay: float, panel: PanelState
 ) -> None:
     """Set the specified area as arming away."""
     panel.areas[area_number].state = AlarmState.ARMING_AWAY
 
 
 def set_area_arming_stay(
-    area_number: int, exit_delay: float, panel: PanelState
+        area_number: int, exit_delay: float, panel: PanelState
 ) -> None:
     """Set the specified area as arming stay."""
     panel.areas[area_number].state = AlarmState.ARMING_STAY
 
 
 def set_zone_entry_delay_started(
-    zone_number: int, entry_delay: float, panel: PanelState
+        zone_number: int, entry_delay: float, panel: PanelState
 ) -> None:
     """Set the specified zone as having started entry delay."""
     pass
@@ -231,7 +231,7 @@ def set_area_ready(area_number: int, panel: PanelState) -> None:
 
 
 def set_battery_fault_zone_expander(expander_number: int, panel: PanelState) -> None:
-    """Set the battery fault status for a zone expander.
+    """Set the battery fault status_response for a zone expander.
 
     Args:
         expander_number: The expander number.
@@ -242,7 +242,7 @@ def set_battery_fault_zone_expander(expander_number: int, panel: PanelState) -> 
 
 
 def clear_battery_fault_zone_expander(expander_number: int, panel: PanelState) -> None:
-    """Clear the battery fault status for a zone expander.
+    """Clear the battery fault status_response for a zone expander.
 
     Args:
         expander_number: The expander number.
@@ -253,7 +253,7 @@ def clear_battery_fault_zone_expander(expander_number: int, panel: PanelState) -
 
 
 def set_battery_fault_output_expander(expander_number: int, panel: PanelState) -> None:
-    """Set the battery fault status for an output expander.
+    """Set the battery fault status_response for an output expander.
 
     Args:
         expander_number: The expander number.
@@ -264,9 +264,9 @@ def set_battery_fault_output_expander(expander_number: int, panel: PanelState) -
 
 
 def clear_battery_fault_output_expander(
-    expander_number: int, panel: PanelState
+        expander_number: int, panel: PanelState
 ) -> None:
-    """Clear the battery fault status for an output expander.
+    """Clear the battery fault status_response for an output expander.
 
     Args:
         expander_number: The expander number.
@@ -277,7 +277,7 @@ def clear_battery_fault_output_expander(
 
 
 def set_battery_fault_prox_expander(expander_number: int, panel: PanelState) -> None:
-    """Set the battery fault status for a prox expander.
+    """Set the battery fault status_response for a prox expander.
 
     Args:
         expander_number: The expander number.
@@ -288,7 +288,7 @@ def set_battery_fault_prox_expander(expander_number: int, panel: PanelState) -> 
 
 
 def clear_battery_fault_prox_expander(expander_number: int, panel: PanelState) -> None:
-    """Clear the battery fault status for a prox expander.
+    """Clear the battery fault status_response for a prox expander.
 
     Args:
         expander_number: The expander number.
@@ -299,7 +299,7 @@ def clear_battery_fault_prox_expander(expander_number: int, panel: PanelState) -
 
 
 def set_mains_fault_prox_expander(expander_number: int, panel: PanelState) -> None:
-    """Set the mains fault status for a prox expander.
+    """Set the mains fault status_response for a prox expander.
 
     Args:
         expander_number: The expander number.
@@ -310,7 +310,7 @@ def set_mains_fault_prox_expander(expander_number: int, panel: PanelState) -> No
 
 
 def clear_mains_fault_prox_expander(expander_number: int, panel: PanelState) -> None:
-    """Clear the mains fault status for a prox expander.
+    """Clear the mains fault status_response for a prox expander.
 
     Args:
         expander_number: The expander number.
@@ -321,7 +321,7 @@ def clear_mains_fault_prox_expander(expander_number: int, panel: PanelState) -> 
 
 
 def set_mains_fault_zone_expander(expander_number: int, panel: PanelState) -> None:
-    """Set the mains fault status for a zone expander.
+    """Set the mains fault status_response for a zone expander.
 
     Args:
         expander_number: The expander number.
@@ -332,7 +332,7 @@ def set_mains_fault_zone_expander(expander_number: int, panel: PanelState) -> No
 
 
 def clear_mains_fault_zone_expander(expander_number: int, panel: PanelState) -> None:
-    """Clear the mains fault status for a zone expander.
+    """Clear the mains fault status_response for a zone expander.
 
     Args:
         expander_number: The expander number.
@@ -343,7 +343,7 @@ def clear_mains_fault_zone_expander(expander_number: int, panel: PanelState) -> 
 
 
 def set_mains_fault_output_expander(expander_number: int, panel: PanelState) -> None:
-    """Set the mains fault status for an output expander.
+    """Set the mains fault status_response for an output expander.
 
     Args:
         expander_number: The expander number.
@@ -354,7 +354,7 @@ def set_mains_fault_output_expander(expander_number: int, panel: PanelState) -> 
 
 
 def clear_mains_fault_output_expander(expander_number: int, panel: PanelState) -> None:
-    """Clear the mains fault status for an output expander.
+    """Clear the mains fault status_response for an output expander.
 
     Args:
         expander_number: The expander number.
@@ -365,7 +365,7 @@ def clear_mains_fault_output_expander(expander_number: int, panel: PanelState) -
 
 
 def set_fuse_fault_output_expander(expander_number: int, panel: PanelState) -> None:
-    """Set the fuse fault status for an output expander.
+    """Set the fuse fault status_response for an output expander.
 
     Args:
         expander_number: The expander number.
@@ -376,7 +376,7 @@ def set_fuse_fault_output_expander(expander_number: int, panel: PanelState) -> N
 
 
 def clear_fuse_fault_output_expander(expander_number: int, panel: PanelState) -> None:
-    """Clear the fuse fault status for an output expander.
+    """Clear the fuse fault status_response for an output expander.
 
     Args:
         expander_number: The expander number.
@@ -387,7 +387,7 @@ def clear_fuse_fault_output_expander(expander_number: int, panel: PanelState) ->
 
 
 def set_fuse_fault_zone_expander(expander_number: int, panel: PanelState) -> None:
-    """Set the fuse fault status for a zone expander.
+    """Set the fuse fault status_response for a zone expander.
 
     Args:
         expander_number: The expander number.
@@ -398,7 +398,7 @@ def set_fuse_fault_zone_expander(expander_number: int, panel: PanelState) -> Non
 
 
 def clear_fuse_fault_zone_expander(expander_number: int, panel: PanelState) -> None:
-    """Clear the fuse fault status for a zone expander.
+    """Clear the fuse fault status_response for a zone expander.
 
     Args:
         expander_number: The expander number.
@@ -409,7 +409,7 @@ def clear_fuse_fault_zone_expander(expander_number: int, panel: PanelState) -> N
 
 
 def set_fuse_fault_prox_expander(expander_number: int, panel: PanelState) -> None:
-    """Set the fuse fault status for a prox expander.
+    """Set the fuse fault status_response for a prox expander.
 
     Args:
         expander_number: The expander number.
@@ -420,7 +420,7 @@ def set_fuse_fault_prox_expander(expander_number: int, panel: PanelState) -> Non
 
 
 def clear_fuse_fault_prox_expander(expander_number: int, panel: PanelState) -> None:
-    """Clear the fuse fault status for a prox expander.
+    """Clear the fuse fault status_response for a prox expander.
 
     Args:
         expander_number: The expander number.
@@ -431,9 +431,9 @@ def clear_fuse_fault_prox_expander(expander_number: int, panel: PanelState) -> N
 
 
 def set_tamper_alarm_triggered_prox_expander(
-    expander_number: int, panel: PanelState
+        expander_number: int, panel: PanelState
 ) -> None:
-    """Set the tamper alarm status for a prox expander.
+    """Set the tamper alarm status_response for a prox expander.
 
     Args:
         expander_number: The expander number.
@@ -444,9 +444,9 @@ def set_tamper_alarm_triggered_prox_expander(
 
 
 def clear_tamper_alarm_triggered_prox_expander(
-    expander_number: int, panel: PanelState
+        expander_number: int, panel: PanelState
 ) -> None:
-    """Clear the tamper alarm status for a prox expander.
+    """Clear the tamper alarm status_response for a prox expander.
 
     Args:
         expander_number: The expander number.
@@ -457,9 +457,9 @@ def clear_tamper_alarm_triggered_prox_expander(
 
 
 def set_tamper_alarm_triggered_zone_expander(
-    expander_number: int, panel: PanelState
+        expander_number: int, panel: PanelState
 ) -> None:
-    """Set the tamper alarm status for a zone expander.
+    """Set the tamper alarm status_response for a zone expander.
 
     Args:
         expander_number: The expander number.
@@ -470,9 +470,9 @@ def set_tamper_alarm_triggered_zone_expander(
 
 
 def clear_tamper_alarm_triggered_zone_expander(
-    expander_number: int, panel: PanelState
+        expander_number: int, panel: PanelState
 ) -> None:
-    """Clear the tamper alarm status for a zone expander.
+    """Clear the tamper alarm status_response for a zone expander.
 
     Args:
         expander_number: The expander number.
@@ -483,9 +483,9 @@ def clear_tamper_alarm_triggered_zone_expander(
 
 
 def set_tamper_alarm_triggered_output_expander(
-    expander_number: int, panel: PanelState
+        expander_number: int, panel: PanelState
 ) -> None:
-    """Set the tamper alarm status for an output expander.
+    """Set the tamper alarm status_response for an output expander.
 
     Args:
         expander_number: The expander number.
@@ -496,9 +496,9 @@ def set_tamper_alarm_triggered_output_expander(
 
 
 def clear_tamper_alarm_triggered_output_expander(
-    expander_number: int, panel: PanelState
+        expander_number: int, panel: PanelState
 ) -> None:
-    """Clear the tamper alarm status for an output expander.
+    """Clear the tamper alarm status_response for an output expander.
 
     Args:
         expander_number: The expander number.
@@ -508,7 +508,7 @@ def clear_tamper_alarm_triggered_output_expander(
     panel.output_expanders[expander_number].tamper_alarm_triggered = False
 
 
-# Zone status operations
+# Zone status_response operations
 def set_zone_alarm(zone_number: int, panel: PanelState) -> None:
     """Set the specified zone into alarm state."""
     if zone_number not in panel.zones:
@@ -607,7 +607,7 @@ def clear_zone_supervise_alarm(zone_number: int, panel: PanelState) -> None:
     panel.zones[zone_number].supervise_alarm = False
 
 
-# Output status operations
+# Output status_response operations
 def set_output_on(output_number: int, panel: PanelState) -> None:
     """Turn an output on."""
     if output_number not in panel.outputs:
@@ -623,7 +623,7 @@ def set_output_off(output_number: int, panel: PanelState) -> None:
 
 
 def set_receiver_fault(panel: PanelState) -> None:
-    """Set the receiver fault status.
+    """Set the receiver fault status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -633,7 +633,7 @@ def set_receiver_fault(panel: PanelState) -> None:
 
 
 def clear_receiver_fault(panel: PanelState) -> None:
-    """Clear the receiver fault status.
+    """Clear the receiver fault status_response.
 
     Args:
         panel: PanelState object to mutate.
@@ -673,28 +673,29 @@ EXPANDER_CODE_DISPATCHER: Final[
 
 
 def get_expander_status_operation(
-    status: Status,
+        status: StatusResponse,
 ) -> Callable[[PanelState], None]:
-    """Return a function that mutates PanelState based on the expander status.
+    """Return a function that mutates PanelState based on the expander status_response.
 
     Args:
         status: Status object.
 
-    Returns: Function that mutates PanelState based on the expander status.
+    Returns: Function that mutates PanelState based on the expander status_response.
 
     """
     if status.expander_code is None or status.expander_number is None:
         raise ValueError(
-            "Extender status, expander number are required for\
-             expander status operations"
+            "Extender status_response, expander number are required for\
+             expander status_response operations"
         )
     key = (status.code, status.expander_code)
+    expander_num = status.expander_number
     operation = EXPANDER_CODE_DISPATCHER.get(key)
     if not operation:
-        raise ValueError(f"Unsupported expander status: {key}")
+        raise ValueError(f"Unsupported expander status_response: {key}")
 
     def panel_state_operation(panel: PanelState) -> None:
-        operation(status.expander_number, panel)
+        operation(expander_num, panel)
 
     return panel_state_operation
 
@@ -727,20 +728,24 @@ NUMBERED_STATUS_DISPATCHER: Final[dict[str, Callable[[int, PanelState], None]]] 
 
 
 def get_numbered_status_operation(
-    numbered_status: Status,
+        numbered_status: StatusResponse,
 ) -> Callable[[PanelState], None]:
-    """Return a function that mutates PanelState based on the numbered status.
+    """Return a function that mutates PanelState based on the numbered status_response.
 
     Args:
         numbered_status: Status object.
 
-    Returns: Function that mutates PanelState based on the numbered status.
+    Returns: Function that mutates PanelState based on the numbered status_response.
 
     """
     if numbered_status.code not in NUMBERED_STATUS_DISPATCHER:
-        raise ValueError(f"Unsupported numbered status: {numbered_status.code}")
+        raise ValueError(
+            f"Unsupported numbered status_response: {numbered_status.code}"
+        )
     if numbered_status.number is None:
-        raise ValueError("Area number is required for numbered status operations")
+        raise ValueError(
+            "Area number is required for numbered status_response operations"
+        )
 
     operation = NUMBERED_STATUS_DISPATCHER[numbered_status.code]
 
@@ -760,22 +765,22 @@ USER_STATUS_DISPATCHER: Final[dict[str, Callable[[int, PanelState], None]]] = {
 
 
 def get_user_status_operation(
-    status: Status,
+        status: StatusResponse,
 ) -> Callable[[PanelState], None]:
-    """Return a function that mutates PanelState based on the user status.
+    """Return a function that mutates PanelState based on the user status_response.
 
     Args:
         status: Status object.
 
-    Returns: Function that mutates PanelState based on the user status.
+    Returns: Function that mutates PanelState based on the user status_response.
 
     """
     if status.code not in USER_STATUS_DISPATCHER:
-        raise ValueError(f"Unsupported user status: {status.code}")
+        raise ValueError(f"Unsupported user status_response: {status.code}")
     if status.number is None:
-        raise ValueError("Area number is required for user status operations")
+        raise ValueError("Area number is required for user status_response operations")
     if status.user_number is None:
-        raise ValueError("User number is required for user status operations")
+        raise ValueError("User number is required for user status_response operations")
 
     operation = USER_STATUS_DISPATCHER[status.code]
     number = status.number
@@ -796,26 +801,32 @@ TIMESTAMPED_STATUS_DISPATCHER: Final[
 
 
 def get_timestamped_status_operation(
-    status: Status,
+        status_response: StatusResponse,
 ) -> Callable[[PanelState], None]:
-    """Return a function that mutates PanelState based on the timestamped status.
+    """Return a function that mutates PanelState based on the timestamped status_response.
 
     Args:
-        status: Status object.
+        status_response: Status object.
 
-    Returns: Function that mutates PanelState based on the timestamped status.
+    Returns: Function that mutates PanelState based on the timestamped status_response.
 
     """
-    if status.code not in TIMESTAMPED_STATUS_DISPATCHER:
-        raise ValueError(f"Unsupported timestamped status: {status.code}")
-    if status.number is None:
-        raise ValueError("Area number is required for timestamped status operations")
-    if status.timestamp is None:
-        raise ValueError("Timestamp is required for timestamped status operations")
+    if status_response.code not in TIMESTAMPED_STATUS_DISPATCHER:
+        raise ValueError(
+            f"Unsupported timestamped status_response: {status_response.code}"
+        )
+    if status_response.number is None:
+        raise ValueError(
+            "Area number is required for timestamped status_response operations"
+        )
+    if status_response.timestamp is None:
+        raise ValueError(
+            "Timestamp is required for timestamped status_response operations"
+        )
 
-    operation = TIMESTAMPED_STATUS_DISPATCHER[status.code]
-    number = status.number
-    timestamp = status.timestamp
+    operation = TIMESTAMPED_STATUS_DISPATCHER[status_response.code]
+    number = status_response.number
+    timestamp = status_response.timestamp
 
     def panel_state_operation(panel: PanelState) -> None:
         operation(number, timestamp, panel)
@@ -845,23 +856,26 @@ STATUS_CODE_DISPATCHER: Final = {
 }
 
 
-def get_only_status_operation(status: Status) -> Callable[[PanelState], None]:
-    """Return a function that mutates PanelState based on the status.
+def get_only_status_operation(
+        status_response: StatusResponse,
+) -> Callable[[PanelState], None]:
+    """Return a function that mutates PanelState based on the status_response.
 
     Args:
-        status: Status object.
+        status_response: Status object.
 
-    Returns: Function that mutates PanelState based on the status.
+    Returns: Function that mutates PanelState based on the status_response.
 
     """
-    panel_state_operation = STATUS_CODE_DISPATCHER.get(status.code)
+    panel_state_operation = STATUS_CODE_DISPATCHER.get(status_response.code)
     if not panel_state_operation:
-        raise ValueError(f"Unsupported status: {status.code}")
+        raise ValueError(f"Unsupported status_response: {status_response.code}")
     return panel_state_operation
 
 
+Status = None
 STATUS_TYPE_DISPATCHER: Final[
-    dict[int, Callable[[Status], Callable[[PanelState], None]]]
+    dict[int, Callable[[StatusResponse], Callable[[PanelState], None]]]
 ] = {
     STATUS_CODE: get_only_status_operation,
     NUMBERED_STATUS: get_numbered_status_operation,
@@ -872,17 +886,17 @@ STATUS_TYPE_DISPATCHER: Final[
 
 
 def get_status_operation(
-    status: Status,
+        status_response: StatusResponse,
 ) -> Callable[[PanelState], None]:
-    """Return a function that mutates PanelState based on the status type.
+    """Return a function that mutates PanelState based on the status_response type.
 
     Args:
-        status: Status object.
+        status_response: Status object.
 
-    Returns: Function that mutates PanelState based on the status type.
+    Returns: Function that mutates PanelState based on the status_response type.
 
     """
-    operation_getter = STATUS_TYPE_DISPATCHER.get(status.flags)
+    operation_getter = STATUS_TYPE_DISPATCHER.get(status_response.flags)
     if not operation_getter:
-        raise ValueError(f"Unsupported status type: {status.flags}")
-    return operation_getter(status)
+        raise ValueError(f"Unsupported status_response type: {status_response.flags}")
+    return operation_getter(status_response)

@@ -1,57 +1,30 @@
 ﻿"""Arrowhead alarm Integration."""
 
-from arrowhead_alarm.transport import TcpTransport
-
-from .client import EciClient
-from .types import (
+from arrowhead_alarm.api.factory import create_eci_tcp_client
+from arrowhead_alarm.types import LoginCredentials
+from arrowhead_alarm.protocol import (
     AlarmState,
     Area,
-    ArmingMode,
-    ConnectionState,
-    Login,
-    Output,
     PanelState,
-    PanelTransport,
     PanelVersion,
     VersionInfo,
     Zone,
 )
+from arrowhead_alarm.protocol.models import ArmingMode, Output
+from arrowhead_alarm.transport.tcp import TcpTransport
 
 __all__ = [
     "PanelState",
     "AlarmState",
     "create_eci_tcp_client",
+    "TcpTransport",
     "Area",
     "Zone",
     "Output",
     "ArmingMode",
-    "ConnectionState",
-    "PanelTransport",
-    "Login",
+    # "ConnectionState",
+    "TcpTransport",
+    "LoginCredentials",
     "PanelVersion",
     "VersionInfo",
-    "EciClient",
 ]
-
-
-def create_eci_tcp_client(
-    host: str, port: int, username: str | None = None, password: str | None = None
-) -> EciClient:
-    """Create an EciClient instance.
-
-    Args:
-        host: Hostname or IP address of the Arrowhead alarm panel.
-        port: TCP port number of the Arrowhead alarm panel.
-        username: Username for authentication.
-        password: Password for authentication.
-
-    Returns:
-        An instance of EciClient.
-
-    """
-    tcp_transport = TcpTransport(host, port)
-    if username and password:
-        creds = Login(username, password)
-    else:
-        creds = None
-    return EciClient(tcp_transport, creds)

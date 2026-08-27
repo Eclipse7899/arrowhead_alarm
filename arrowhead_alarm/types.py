@@ -1,42 +1,30 @@
 ﻿"""Types for Arrowhead alarm integration."""
-
 import asyncio
+import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from enum import Enum, IntFlag, auto
-from functools import total_ordering
+from enum import IntFlag
 from typing import (
-    Awaitable,
     Callable,
-    Dict,
     Generic,
     TypeAlias,
     TypeVar,
+    Literal,
 )
 
-try:
-    from typing import override  # ty:ignore[unresolved-import]
-except ImportError:
-    from typing_extensions import override  # ty:ignore[unresolved-import]
+if sys.version_info >= (3, 11):
+    from typing import override
+else:
+    from typing_extensions import override
 
+_T = TypeVar("_T")
+_U = TypeVar("_U")
+_V = TypeVar("_V")
+_E = TypeVar("_E")
+_F = TypeVar("_F")
 
-In = TypeVar("In")
-Out = TypeVar("Out")
-Next = TypeVar("Next")
-
-T = TypeVar("T")
-F = TypeVar("F")
-
-
-@dataclass
-class Expander:
-    """Expander state."""
-
-    expander_id: int
-    tamper_alarm_triggered: bool
-    mains_fault: bool
-    battery_fault: bool
-    fuse_fault: bool
+Transformer: TypeAlias = Callable[[_T], _U]
+ResultTransformer: TypeAlias = Callable[[_T], "Result[_U, _E]"]
 
 
 @dataclass
@@ -48,47 +36,16 @@ class UserPin:
 
 
 @dataclass
-class Login:
-    """Login credentials for the alarm panel connection."""
-
+class LoginCredentials:
+    """Credentials for the alarm panel connection."""
     username: str
     password: str
 
-
-class PanelTransport(ABC):
-    """Abstract base class for Arrowhead alarm panel transport."""
-
-    @abstractmethod
-    async def connect(self) -> None:
-        """Establish a connection to the alarm panel."""
-        ...
-
-    @abstractmethod
-    async def disconnect(self) -> None:
-        """Disconnect from the alarm panel."""
-        ...
-
-    @abstractmethod
-    async def write(self, data: str) -> None:
-        """Write string data to the connection.
-
-        Args:
-            data: String data to send.
-
-        """
-        ...
-
-    @abstractmethod
-    async def read(self, n: int) -> str:
-        """Read string data from the connection.
-
-        Args:
-            n: Maximum number of bytes to read.
-
-        Returns: Decoded string data read from the connection.
-
-        """
-        ...
+    def __post_init__(self):
+        if not self.username:
+            raise ValueError("Username cannot be empty.")
+        if not self.password:
+            raise ValueError("Password cannot be empty.")
 
 
 class ArmingCapabilities(IntFlag):
@@ -98,7 +55,6 @@ class ArmingCapabilities(IntFlag):
     INDIVIDUAL_AREA = 1 << 0
     USER_ID_AND_PIN = 1 << 1
     ONE_PUSH = 1 << 2
-
 
 class DisarmingCapabilities(IntFlag):
     """Capabilities for disarming the alarm panel."""
@@ -117,221 +73,6 @@ class AlarmCapabilities:
     disarming: DisarmingCapabilities = DisarmingCapabilities.NONE
 
 
-@total_ordering
-@dataclass(frozen=True)
-class VersionInfo:
-    """Version information."""
-
-    major_version: int
-    minor_version: int
-    patch_version: int
-
-    def _as_tuple(self) -> tuple[int, int, int]:
-        return self.major_version, self.minor_version, self.patch_version
-
-    def __lt__(self, other: "VersionInfo") -> bool:
-        """Check if this VersionInfo is less than another.
-
-        Args:
-            other: The other VersionInfo instance to compare.
-
-        Returns: True if this instance is less than the other, False otherwise.
-
-        """
-        return self._as_tuple() < other._as_tuple()
-
-    def __gt__(self, other: "VersionInfo") -> bool:
-        """Check if this VersionInfo is greater than another.
-
-        Args:
-            other: The other VersionInfo instance to compare.
-
-        Returns: True if this instance is greater than the other, False otherwise.
-
-        """
-        return self._as_tuple() > other._as_tuple()
-
-    def __le__(self, other: "VersionInfo") -> bool:
-        """Check if this VersionInfo is less than or equal to another.
-
-        Args:
-            other: The other VersionInfo instance to compare.
-        Returns: True if this instance is less than or \
-        equal to the other, False otherwise.
-
-        """
-        return self._as_tuple() <= other._as_tuple()
-
-    def __ge__(self, other: "VersionInfo") -> bool:
-        """Check if this VersionInfo is greater than or equal to another.
-
-        Args:
-            other: The other VersionInfo instance to compare.
-
-        Returns: True if this instance is greater than or \
-        equal to the other, False otherwise.
-
-        """
-        return self._as_tuple() >= other._as_tuple()
-
-
-@dataclass
-class PanelVersion:
-    """Panel version information."""
-
-    model: str
-    firmware_version: VersionInfo
-    serial_number: str
-
-
-class ConnectionState(Enum):
-    """Connection states."""
-
-    DISCONNECTED = "disconnected"
-    CONNECTING = "connecting"
-    CONNECTED = "connected"
-    ERROR = "error"
-
-
-class AlarmState(Enum):
-    """Alarm states."""
-
-    DISARMED = "disarmed"
-    ARMED_AWAY = "armed_away"
-    ARMED_STAY = "armed_stay"
-    ARMING_AWAY = "arming_away"
-    ARMING_STAY = "arming_stay"
-    ALARM_TRIGGERED = "alarm_triggered"
-
-
-@dataclass
-class Area:
-    """Alarm Area status."""
-
-    area_number: int
-    state: AlarmState
-    ready_to_arm: bool
-
-
-@dataclass
-class Zone:
-    """Alarm Zone status."""
-
-    zone_number: int
-    supervise_alarm: bool
-    trouble_alarm: bool
-    bypassed: bool
-    alarm: bool
-    radio_battery_low: bool
-    zone_closed: bool
-    sensor_watch_alarm: bool
-
-
-@dataclass
-class Output:
-    """Alarm Output status."""
-
-    output_number: int
-    on: bool
-
-
-@dataclass
-class PanelState:
-    """Overall status of the alarm panel."""
-
-    ready_to_arm: bool
-    battery_fault: bool
-    mains_fault: bool
-    tamper_alarm_triggered: bool
-    line_fault: bool
-    dialer_fault: bool
-    dialer_line_fault: bool
-    fuse_fault: bool
-    monitoring_station_active: bool
-    dialer_active: bool
-    code_tamper: bool
-    receiver_fault: bool | None
-    pendant_battery_fault: bool | None
-    rf_battery_low: bool | None
-    sensor_watch_alarm: bool | None
-    zones: Dict[int, Zone]
-    outputs: Dict[int, Output]
-    areas: Dict[int, Area]
-    zone_expanders: Dict[int, Expander]
-    output_expanders: Dict[int, Expander]
-    prox_expanders: Dict[int, Expander]
-
-
-class ProtocolMode(Enum):
-    """Protocol modes."""
-
-    MODE_1 = 1  # Default, no acknowledgments
-    MODE_2 = 2  # AAP mode, with acknowledgments
-    MODE_3 = 3  # Permaconn mode, with acknowledgments
-    MODE_4 = 4  # Home Automation mode, no acknowledgments (ECi FW 10.3.50+)
-
-
-class ArmingMode(Enum):
-    """Arming modes."""
-
-    AWAY = "away"
-    STAY = "stay"
-
-
-class StatusFlags(IntFlag):
-    """Parts of a CombinedStatusCode message."""
-
-    CODE = auto()
-    NUMBER = auto()
-    EXPANDER_CODE = auto()
-    EXPANDER_NUMBER = auto()
-    USER_NUMBER = auto()
-    TIMESTAMP = auto()
-
-
-STATUS_CODE = StatusFlags.CODE
-
-NUMBERED_STATUS = STATUS_CODE | StatusFlags.NUMBER
-
-EXPANDER_STATUS = STATUS_CODE | StatusFlags.EXPANDER_CODE | StatusFlags.EXPANDER_NUMBER
-
-USER_STATUS = NUMBERED_STATUS | StatusFlags.USER_NUMBER
-
-TIMESTAMPED_STATUS = NUMBERED_STATUS | StatusFlags.TIMESTAMP
-
-
-@dataclass
-class Status:
-    """Status message from panel."""
-
-    code: str
-    number: int | None = None
-    expander_code: str | None = None
-    expander_number: int | None = None
-    user_number: int | None = None
-    timestamp: float | None = None
-
-    @property
-    def flags(self) -> StatusFlags:
-        """Determine the StatusFlags for this Status instance.
-
-        Returns: The combined StatusFlags representing the fields present.
-
-        """
-        flags = StatusFlags.CODE
-        if self.number is not None:
-            flags |= StatusFlags.NUMBER
-        if self.expander_code is not None:
-            flags |= StatusFlags.EXPANDER_CODE
-        if self.expander_number is not None:
-            flags |= StatusFlags.EXPANDER_NUMBER
-        if self.user_number is not None:
-            flags |= StatusFlags.USER_NUMBER
-        if self.timestamp is not None:
-            flags |= StatusFlags.TIMESTAMP
-        return flags
-
-
 class ToggleEvent:
     """An asyncio-compatible event that can be set or cleared."""
 
@@ -347,7 +88,7 @@ class ToggleEvent:
         Returns: True if the event is set, False otherwise.
 
         """
-        return bool(self._set_event.is_set())
+        return self._set_event.is_set()
 
     def is_clear(self) -> bool:
         """Check if the event is clear.
@@ -355,7 +96,7 @@ class ToggleEvent:
         Returns: True if the event is clear, False otherwise.
 
         """
-        return bool(self._clear_event.is_set())
+        return self._clear_event.is_set()
 
     def set(self) -> None:
         """Set the event."""
@@ -376,184 +117,297 @@ class ToggleEvent:
         await self._clear_event.wait()
 
 
-class FlowResult(Generic[T], ABC):
-    """Represents the result of a flow operation."""
-
+class ResultBase(ABC, Generic[_T, _E]):
+    """Abstract base class for Result types."""
+    is_ok: bool
     @abstractmethod
-    def bind(self, processor: Callable[[T], "FlowResult[Out]"]) -> "FlowResult[Out]":
-        """Process the FlowResult with the given processor function.
+    def bind(self, func: ResultTransformer[_T, _U, _E]) -> "Result[_U, _E]":
+        """Bind the result to a function that returns a Result.
 
         Args:
-            processor: A function that takes a value of type T and returns a \
-            FlowResult of type Out.
+            func: A function that takes a value and returns a Result.
 
-        Returns: A FlowResult of type Out after processing.
-
-        """
-        ...
-
-
-Transformer: TypeAlias = Callable[[In], FlowResult[Out]]
-
-Consumer: TypeAlias = Callable[[In | Exception], None]
-
-
-@dataclass(frozen=True)
-class Go(FlowResult[T]):
-    """Indicates that the flow should proceed with the given value."""
-
-    value: T
-
-    @override
-    def bind(self, processor: Callable[[T], FlowResult[Out]]) -> FlowResult[Out]:
-        return processor(self.value)
-
-
-@dataclass(frozen=True)
-class Wait(FlowResult[T]):
-    """Indicates that the flow should wait for an external event."""
-
-    @override
-    def bind(self, processor: Callable[[T], FlowResult[Out]]) -> FlowResult[Out]:
-        return Wait()
-
-
-@dataclass(frozen=True)
-class Reject(FlowResult[T]):
-    """Indicates that the flow should be restarted."""
-
-    @override
-    def bind(self, processor: Callable[[T], FlowResult[Out]]) -> FlowResult[Out]:
-        return Reject()
-
-
-@dataclass(frozen=True)
-class Error(FlowResult[T]):
-    """Represents an error in the flow."""
-
-    error: Exception
-
-    @override
-    def bind(self, processor: Callable[[T], FlowResult[Out]]) -> FlowResult[Out]:
-        return Error(self.error)
-
-
-class Outcome(Generic[T], ABC):
-    """Base class for outcome results."""
-
-    @abstractmethod
-    def unwrap(self) -> T:
-        """Unwrap the outcome to get the value or raise the error.
-
-        Returns: The value if success.
-
-        Raises: The error if failure.
+        Returns: The Result returned by the function.
 
         """
         ...
 
     @abstractmethod
-    def is_success(self) -> bool:
-        """Check if the outcome is a success.
+    def map_error(self, func: Transformer[_E, _F]) -> "Result[_T, _F]":
+        """Bind the error to a function that returns a Result.
 
-        Returns: True if success, False otherwise.
+        Args:
+            func: A function that takes an error and returns a Result.
+
+        Returns: The Result returned by the function.
+
+        """
+        ...
+
+    @abstractmethod
+    def map(self, func: Transformer[_T, _U]) -> "Result[_U, _E]":
+        """Map the result to a new Result.
+
+        Args:
+            func: A function that takes a value and returns a new value.
+
+        Returns: A new Result instance with the mapped value.
 
         """
         ...
 
 
-@dataclass(frozen=True)
-class Success(Outcome[T]):
-    """Represents a successful outcome."""
+@dataclass(frozen=True, slots=True)
+class Success(ResultBase[_T, _E], Generic[_T, _E]):
+    """Represents a successful result with a value."""
 
-    value: T
-
-    @override
-    def is_success(self) -> bool:
-        return True
+    value: _T
+    is_ok: Literal[True] = True
 
     @override
-    def unwrap(self) -> T:
-        return self.value
-
-
-@dataclass(frozen=True)
-class Fail(Outcome[T]):
-    """Represents a failed outcome."""
-
-    error: Exception
-
-    @override
-    def is_success(self) -> bool:
-        return False
-
-    @override
-    def unwrap(self) -> T:
-        raise self.error
-
-
-@dataclass
-class Request(Generic[T]):
-    """Represents a request with data, response callback, and awaitable result."""
-
-    data: str
-    response_callback: Consumer[str]
-    awaitable: Awaitable[T]
-
-
-class FlowFunc(Generic[In, Out]):
-    """Wraps a function that returns FlowResult, allows >> composition."""
-
-    def __init__(self, func: Callable[[In], "FlowResult[Out]"]) -> None:
-        """Initialize the FlowFunc with the given function."""
-        self.func: Callable[[In], "FlowResult[Out]"] = func
-
-    def __rshift__(
-        self, other: Callable[[Out], "FlowResult[Next]"]
-    ) -> "FlowFunc[In, Next]":
-        """Enable the use of the >> operator to chain FlowFuncs.
+    def bind(self, func: ResultTransformer[_T, _U, _E]) -> "Result[_U, _E]":
+        """Bind the success value to a function that returns a Result.
 
         Args:
-            other: A function that takes a value of type Out and returns a \
-            FlowResult of type Next.
+            func: A function that takes the success value and returns a Result.
 
-        Returns: A new FlowFunc that represents the chained operation.
+        Returns: The Result returned by the function.
 
         """
+        return func(self.value)
 
-        def chained_func(x: In) -> "FlowResult[Next]":
-            result = self.func(x)
-            return result.bind(other)
-
-        return FlowFunc(chained_func)
-
-    def __call__(self, x: In) -> "FlowResult[Out]":
-        """Call the wrapped function.
+    @override
+    def map(self, func: Transformer[_T, _U]) -> "Result[_U, _E]":
+        """Map the success value to a new Result.
 
         Args:
-            x: Input value of type In.
+            func: A function that takes the success value and returns a new value.
 
-        Returns: A FlowResult of type Out.
+        Returns: A new Success instance with the mapped value.
 
         """
-        return self.func(x)
+        return Success(func(self.value))
+
+    @override
+    def map_error(self, func: Transformer[_E, _F]) -> "Result[_T, _F]":
+        """Map the error to a new Result.
+
+        Args:
+            func: A function that takes the error value and returns a new Result.
+
+        Returns: The original Success instance.
+
+        """
+        return Success(self.value)
 
 
-class Flow:
-    """Base class for flow operations."""
+@dataclass(frozen=True, slots=True)
+class Failure(ResultBase[_T, _E], Generic[_T, _E]):
+    """Represents a failed result with an error."""
 
+    error: _E
+    is_ok: Literal[False] = False
+
+    @override
+    def bind(self, func: ResultTransformer[_T, _U, _E]) -> "Result[_U, _E]":
+        """Bind the failure to a function that returns a Result.
+
+        Args:
+            func: A function that takes a value and returns a Result.
+
+        Returns: The original Failure instance.
+
+        """
+        return Failure(self.error)
+
+    @override
+    def map(self, func: Transformer[_T, _U]) -> "Result[_U, _E]":
+        """Map the failure to a new Result.
+
+        Args:
+            func: A function that takes the failure value and returns a new value.
+
+        Returns: A new Failure instance with the mapped value.
+
+        """
+        return Failure(self.error)
+
+    @override
+    def map_error(self, func: Transformer[_E, _F]) -> "Result[_T, _F]":
+        """Map the error to a new Result.
+
+        Args:
+            func: A function that takes the error value and returns a new Result.
+
+        Returns: A new Failure instance with the mapped error.
+
+        """
+        return Failure(func(self.error))
+
+
+Result: TypeAlias = Success[_T, _E] | Failure[_T, _E]
+
+
+@dataclass(frozen=True)
+class ResultPipeline(Generic[_T, _U, _E]):
+    """A flow of Result transformations."""
+
+    _transformer: ResultTransformer[_T, _U, _E]
+
+    def run_result(self, result: Result[_T, _E]) -> Result[_U, _E]:
+        """Run the pipeline starting from a Result.
+
+        Args:
+            result: A Result instance to start the pipeline.
+        """
+        return result.bind(self._transformer)
+
+    def bind(self, other: ResultTransformer[_U, _V, _E]) -> "ResultPipeline[_T, _V, _E]":
+        """Chain another result_transformer function to the ResultPipeline.
+
+        Args:
+            other: A function that takes command of type _U and returns a Result[_V, _E].
+
+        Returns: A new ResultPipeline that applies the original result_transformer
+        followed by the other result_transformer.
+
+        """
+        return ResultPipeline(lambda data: self._transformer(data).bind(other))
+
+    def map(self, other: Transformer[_U, _V]) -> "ResultPipeline[_T, _V, _E]":
+        """Chain another result_transformer function to the ResultPipeline.
+
+        Args:
+            other: A function that takes command of type _U and returns a value of type _V.
+
+        Returns: A new ResultPipeline that applies the original result_transformer
+        followed by the other result_transformer.
+
+        """
+        return ResultPipeline(lambda data: self._transformer(data).map(other))
+
+    def map_error(self, other: Transformer[_E, _F]) -> "ResultPipeline[_T, _U, _F]":
+        """Chain another error result_transformer function to the ResultPipeline.
+
+        Args:
+            other: A function that takes an error of type _E and returns a Result[_T, _F].
+
+        Returns: A new ResultPipeline that applies the original result_transformer
+        followed by the other error result_transformer.
+
+        """
+        return ResultPipeline(lambda data: self._transformer(data).map_error(other))
+
+    def flatten(self) -> ResultTransformer[_T, _U, _E]:
+        """Return the flattened ResultPipeline."""
+        return self._transformer
+
+class Publisher(Generic[_T]):
+    """A _publisher that notifies subscribers of changes."""
     def __init__(self) -> None:
-        """Initialize the Flow."""
-        pass
+        """Initialize the Publisher."""
+        self._subscribers: set[Callable[[_T], None]] = set()
 
-    def __rshift__(self, other: Callable[[In], FlowResult[Out]]) -> FlowFunc[In, Out]:
-        """Enable the use of the >> operator to create a FlowFunc.
+    def subscribe(self, callback: Callable[[_T], None]) -> None:
+        """Subscribe to changes."""
+        self._subscribers.add(callback)
 
-        Args:
-            other: A function that takes a value of type In and returns a \
-            FlowResult of type Out.
+    def unsubscribe(self, callback: Callable[[_T], None]) -> None:
+        """Unsubscribe from changes."""
+        self._subscribers.discard(callback)
 
-        Returns: A FlowFunc that wraps the given function.
+    def dispatch(self, data: _T) -> None:
+        """Notify subscribers of a change."""
+        for subscriber in self._subscribers:
+            subscriber(data)
 
-        """
-        return FlowFunc(other)
+class CollectionResultBase(ABC, Generic[_T]):
+    """Base class for evaluation results."""
+
+    is_done: bool
+
+    @abstractmethod
+    def bind(
+        self, func: Transformer[_T, "CollectionResult[_U]"]
+    ) -> "CollectionResult[_U]":
+        """Bind the result to a function that returns another result."""
+        ...
+
+    @abstractmethod
+    def map(self, func: Transformer[_T, _U]) -> "CollectionResult[_U]":
+        """Map the result to a new value."""
+        ...
+
+
+@dataclass(frozen=True, slots=True)
+class Done(CollectionResultBase[_T]):
+    """Indicates that the evaluated resp is complete."""
+
+    value: _T
+    is_done: Literal[True] = True
+
+    @override
+    def bind(self, func: Transformer[_T, "CollectionResult[_U]"]) -> "CollectionResult[_U]":
+        """Bind the Done result to a function that returns another CollectionResult."""
+        return func(self.value)
+
+    @override
+    def map(self, func: Transformer[_T, _U]) -> "CollectionResult[_U]":
+        """Map the Done result to a new value."""
+        return Done(func(self.value))
+
+
+@dataclass(frozen=True, slots=True)
+class Waiting(CollectionResultBase[_T]):
+    """Indicates that the evaluated resp is irrelevant."""
+
+    is_done: Literal[False] = False
+
+    @override
+    def bind(self, func: Transformer[_T, "CollectionResult[_U]"]) -> "CollectionResult[_U]":
+        """Bind the Waiting result to a function that returns another CollectionResult."""
+        return Waiting()
+
+    @override
+    def map(self, func: Transformer[_T, _U]) -> "CollectionResult[_U]":
+        """Map the Waiting result to a new value."""
+        return Waiting()
+
+CollectionResult: TypeAlias = Done[_T] | Waiting[_T]
+
+Collector: TypeAlias = Callable[[_T], CollectionResult[_U]]
+
+class CollectorPipeline(Generic[_T, _U]):
+    """Represents a pipeline of evaluators."""
+
+    @classmethod
+    def of_string(cls) -> "CollectorPipeline[str, str]":
+        """Create an empty CollectorPipeline."""
+        return CollectorPipeline(lambda data: Done(data))
+
+    @classmethod
+    def of_string_list(cls) -> "CollectorPipeline[list[str], list[str]]":
+        """Create an empty CollectorPipeline for a list of strings."""
+        return CollectorPipeline(lambda data: Done(data))
+
+    def __init__(self, collector: Collector[_T, _U]) -> None:
+        self._collector: Collector[_T, _U] = collector
+
+    def bind(
+        self,
+        other: Collector[_U, _V],
+    ) -> "CollectorPipeline[_T, _V]":
+        """Chain the current _collector with another _collector."""
+        return CollectorPipeline(lambda data: self._collector(data).bind(other))
+
+    def map(
+        self,
+        func: Transformer[_U, _V],
+    ) -> "CollectorPipeline[_T, _V]":
+        """Map the current _collector's result to a new value."""
+        return CollectorPipeline(lambda data: self._collector(data).map(func))
+
+    def flatten(self) -> Collector[_T, _U]:
+        """Return the flattened _collector."""
+        return self._collector
+
