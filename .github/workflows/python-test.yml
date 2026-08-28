@@ -26,17 +26,11 @@ jobs:
       - name: Install the project
         run: uv sync --locked --all-extras --dev
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff
-          pip install ty
-
       - name: Run Ruff
-        run: ruff check --output-format=github .
+        run: ruff check --output-format=github src
 
       - name: Run Ty
-        run: ty check --output-format=github .
+        run: ty check --output-format=github src
 
       - name: Run tests
-        run: uv _collector pytest tests
+        run: uv run pytest src/tests
