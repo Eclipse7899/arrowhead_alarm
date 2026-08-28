@@ -7,8 +7,6 @@ from typing import (
     TypeVar,
 )
 
-from arrowhead_alarm.protocol import CollectionResult
-
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 _V = TypeVar("_V")
@@ -71,8 +69,6 @@ class ToggleEvent:
     async def wait_until_clear(self) -> None:
         """Wait until the event is clear."""
         await self._clear_event.wait()
-
-
 
 
 class Publisher(Generic[_T]):

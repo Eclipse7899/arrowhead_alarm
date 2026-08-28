@@ -1,9 +1,8 @@
 """Factory functions for creating an instance of the client."""
-from arrowhead_alarm.api.eci_client import EciClient
 from arrowhead_alarm.types import LoginCredentials
 
 
-def create_eci_tcp_client(
+def create_mode_2_client(
         host: str, port: int, username: str | None = None, password: str | None = None
 ) -> EciClient:
     """Create an EciClient instance.
@@ -22,4 +21,4 @@ def create_eci_tcp_client(
         creds = LoginCredentials(username, password)
     else:
         creds = None
-    return EciClient(host, port, creds)
+    return Mode2Client()

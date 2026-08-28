@@ -342,6 +342,7 @@ class CollectorContext(Generic[_T, _U]):
             )
         )
 
+
 @dataclass
 class Command(Generic[_T]):
     data: str

@@ -75,6 +75,7 @@ class CommandClient:
                 result = command.collector(response)
                 if result.is_done and not future.done():
                     future.set_result(result.value)
+
             self._handlers.add(handle)
 
             try:

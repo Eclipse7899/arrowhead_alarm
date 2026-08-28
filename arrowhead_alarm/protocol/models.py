@@ -4,12 +4,9 @@ from dataclasses import dataclass
 from enum import Enum, IntFlag, auto
 from functools import total_ordering
 from typing import (
-    Generic,
     TypeAlias,
     TypeVar,
 )
-
-from .types import Collector
 
 if sys.version_info >= (3, 11):
     pass
