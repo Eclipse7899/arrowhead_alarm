@@ -2,13 +2,14 @@ from enum import Enum
 
 from arrowhead_alarm import TcpTransport, LoginCredentials
 from arrowhead_alarm.const import AUTH_WELCOME_MSG, AUTH_LOGIN_MSG, AUTH_PASSWORD_PROMPT
-from arrowhead_alarm.types import Publisher
 from arrowhead_alarm.transport.tcp import TcpState, TcpDisconnected
+from arrowhead_alarm.types import Publisher
 
 
 class SessionState(Enum):
     CONNECTED = 0
     DISCONNECTED = 1
+
 
 class AuthenticatedSession:
     def __init__(self, transport: TcpTransport, credentials: LoginCredentials | None) -> None:
@@ -26,7 +27,6 @@ class AuthenticatedSession:
     def _on_transport_state_change(self, state: TcpState) -> None:
         if isinstance(state, TcpDisconnected):
             self._set_state(SessionState.DISCONNECTED)
-
 
     async def connect(self) -> None:
         """Connect to the Arrowhead alarm panel."""
@@ -60,8 +60,8 @@ class AuthenticatedSession:
         else:
             raise Exception("Authentication failed: Done prompt not received.")
 
-    async def read(self, n: int = 1024) -> str:
-        return await self.transport.read(n)
+    async def readline(self) -> str:
+        return await self.transport.readline()
 
-    async def write(self, data: str) -> None:
-        await self.transport.write(data)
+    async def writeln(self, data: str) -> None:
+        await self.transport.writeln(data)

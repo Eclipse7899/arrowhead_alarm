@@ -4,7 +4,7 @@ from arrowhead_alarm.types import LoginCredentials
 
 
 def create_eci_tcp_client(
-    host: str, port: int, username: str | None = None, password: str | None = None
+        host: str, port: int, username: str | None = None, password: str | None = None
 ) -> EciClient:
     """Create an EciClient instance.
 

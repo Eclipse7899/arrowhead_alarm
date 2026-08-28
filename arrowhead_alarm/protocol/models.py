@@ -1,17 +1,15 @@
 """Types used in the Arrowhead Alarm protocol."""
-import asyncio
 import sys
 from dataclasses import dataclass
 from enum import Enum, IntFlag, auto
 from functools import total_ordering
 from typing import (
-    Callable,
     Generic,
     TypeAlias,
     TypeVar,
 )
 
-from arrowhead_alarm.types import Collector
+from .types import Collector
 
 if sys.version_info >= (3, 11):
     pass
@@ -19,6 +17,36 @@ else:
     pass
 
 _T = TypeVar("_T")
+
+
+class StatusFlags(IntFlag):
+    """Parts of a CombinedStatusCode command."""
+
+    CODE = auto()
+    NUMBER = auto()
+    EXPANDER_CODE = auto()
+    EXPANDER_NUMBER = auto()
+    USER_NUMBER = auto()
+    TIMESTAMP = auto()
+
+
+STATUS_CODE = StatusFlags.CODE
+
+NUMBERED_STATUS = STATUS_CODE | StatusFlags.NUMBER
+
+EXPANDER_STATUS = STATUS_CODE | StatusFlags.EXPANDER_CODE | StatusFlags.EXPANDER_NUMBER
+
+USER_STATUS = NUMBERED_STATUS | StatusFlags.USER_NUMBER
+
+TIMESTAMPED_STATUS = NUMBERED_STATUS | StatusFlags.TIMESTAMP
+
+
+@dataclass
+class UserPin:
+    """User ID and PIN for arming/disarming."""
+
+    user_id: int
+    pin: int
 
 
 class ProtocolMode(Enum):
@@ -111,27 +139,6 @@ class CommandPayload:
             joined = " ".join(str(arg) for arg in self.args)
             line = f"{line} {joined}"
         return line
-
-
-@dataclass
-class ResponseHandler(Generic[_T]):
-    """Represents a response callback."""
-    callback: Callable[[str], None]
-    future: asyncio.Future[_T]
-
-
-@dataclass
-class Request(Generic[_T]):
-    """A pending protocol request."""
-
-    request_data: str | None
-    response: ResponseHandler[_T]
-
-
-@dataclass
-class CommandRequest(Generic[_T]):
-    data: str
-    collector: Collector[str, _T]
 
 
 @dataclass
@@ -235,28 +242,6 @@ class PanelState:
     zone_expanders: dict[int, Expander]
     output_expanders: dict[int, Expander]
     prox_expanders: dict[int, Expander]
-
-
-class StatusFlags(IntFlag):
-    """Parts of a CombinedStatusCode command."""
-
-    CODE = auto()
-    NUMBER = auto()
-    EXPANDER_CODE = auto()
-    EXPANDER_NUMBER = auto()
-    USER_NUMBER = auto()
-    TIMESTAMP = auto()
-
-
-STATUS_CODE = StatusFlags.CODE
-
-NUMBERED_STATUS = STATUS_CODE | StatusFlags.NUMBER
-
-EXPANDER_STATUS = STATUS_CODE | StatusFlags.EXPANDER_CODE | StatusFlags.EXPANDER_NUMBER
-
-USER_STATUS = NUMBERED_STATUS | StatusFlags.USER_NUMBER
-
-TIMESTAMPED_STATUS = NUMBERED_STATUS | StatusFlags.TIMESTAMP
 
 
 @dataclass

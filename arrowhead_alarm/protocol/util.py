@@ -2,7 +2,6 @@
 import re
 from typing import Final
 
-from arrowhead_alarm.types import Failure, Result, Success
 from .const import COMMAND_ERROR_PREFIX, COMMAND_OK_PREFIX
 from .exceptions import (
     CommandError,
@@ -23,6 +22,7 @@ from .models import (
     StatusResponse,
     VersionInfo
 )
+from .types import Failure, Result, Success
 
 
 def is_command_ok(data: str) -> bool:

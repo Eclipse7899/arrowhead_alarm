@@ -2,7 +2,7 @@
 
 from typing import Callable, Final
 
-from arrowhead_alarm.protocol.models import (
+from .models import (
     EXPANDER_STATUS,
     NUMBERED_STATUS,
     STATUS_CODE,

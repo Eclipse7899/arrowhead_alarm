@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-from arrowhead_alarm.protocol.models import ProtocolMode
+from .models import ProtocolMode
 
 
 class ProtocolErrorCode(Enum):

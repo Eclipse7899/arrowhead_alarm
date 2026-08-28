@@ -1,25 +1,29 @@
-from contextlib import asynccontextmanager
-from typing import Callable, TypeVar
-from arrowhead_alarm.protocol import Request
 import asyncio
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from typing import Callable, TypeVar
 
-from arrowhead_alarm.types import Publisher
+from arrowhead_alarm.protocol import Command
 from arrowhead_alarm.transport.authenticated_session import AuthenticatedSession
+from arrowhead_alarm.types import Publisher
+
 
 @dataclass
 class ClientConnected:
     read_worker: asyncio.Task
 
+
 @dataclass
 class ClientDisconnected:
     pass
+
 
 _T = TypeVar("_T")
 
 ClientState = ClientConnected | ClientDisconnected
 
-class RequestClient:
+
+class CommandClient:
     def __init__(self, session: AuthenticatedSession):
         self._session = session
         self.state = ClientDisconnected()
@@ -45,9 +49,9 @@ class RequestClient:
 
     async def _read_worker(self):
         while True:
-            resp = await self._session.read()
+            line = await self._session.readline()
             for handler in self._handlers:
-                handler(resp)
+                handler(line)
 
     @asynccontextmanager
     async def _use_handler(self, handler: Callable[[str], None]):
@@ -63,9 +67,18 @@ class RequestClient:
     def unsubscribe(self, handler: Callable[[str], None]):
         self._handlers.remove(handler)
 
-    async def request(self, request: Request[_T]) -> _T:
-        async with self._use_handler(request.response.callback):
-            if request.request_data is not None:
-                await self._session.write(request.request_data)
-            return await request.response.future
+    async def request(self, command: Command[_T]) -> _T:
+        async with self._use_handler(lambda resp: None):
+            future = asyncio.get_running_loop().create_future()
 
+            def handle(response: str):
+                result = command.collector(response)
+                if result.is_done and not future.done():
+                    future.set_result(result.value)
+            self._handlers.add(handle)
+
+            try:
+                await self._session.writeln(command.data)
+                return await future
+            finally:
+                self._handlers.remove(handle)

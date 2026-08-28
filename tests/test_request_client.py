@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from arrowhead_alarm.transport.authenticated_session import AuthenticatedSession
-from arrowhead_alarm.transport.request_client import RequestClient, ClientDisconnected, ClientConnected
+from arrowhead_alarm.transport.command_client import CommandClient, ClientDisconnected, ClientConnected
 
 
 @pytest.fixture
@@ -19,7 +19,7 @@ def session():
 
 @pytest.fixture
 def client(session):
-    return RequestClient(session)
+    return CommandClient(session)
 
 
 class TestRequestClientState:

@@ -12,17 +12,19 @@ if sys.version_info >= (3, 11):
 else:
     pass
 
-from arrowhead_alarm.const import DEF_ENCODING, DEF_READ_LENGTH
+from arrowhead_alarm.const import DEF_ENCODING, DEF_READ_LENGTH, DEF_LINE_DELIMITER
 
 _LOGGER = logging.getLogger(__name__)
 
 _T = TypeVar("_T")
+
 
 @dataclass
 class TcpConnected:
     """Represents a connected TCP connection."""
     reader: asyncio.StreamReader
     writer: asyncio.StreamWriter
+
 
 @dataclass
 class TcpDisconnected:
@@ -37,15 +39,17 @@ class TcpTransport:
     """Asyncio-based TCP _transport for the Arrowhead alarm system."""
 
     def __init__(
-        self,
-        host: str,
-        port: int,
-        encoding: str = DEF_ENCODING,
-        connect_timeout: float = 10.0,
+            self,
+            host: str,
+            port: int,
+            encoding: str = DEF_ENCODING,
+            delimiter: str = DEF_LINE_DELIMITER,
+            connect_timeout: float = 10.0,
     ) -> None:
         """Initialize the TCP _transport."""
         self.host = host
         self.port = port
+        self.delimiter = delimiter
         self.encoding = encoding
         self.connect_timeout = connect_timeout
 
@@ -104,6 +108,20 @@ class TcpTransport:
                 _LOGGER.debug("Error occurred while writing to TCP _transport: %s", e)
                 raise ConnectionError("Failed to write to TCP _transport")
 
+    async def readline(self) -> str:
+        if not isinstance(self._state, TcpConnected):
+            raise ConnectionError("TCP _transport not connected")
+
+        data = await self._state.reader.readline()
+        if data == b'':
+            async with self._state_lock:
+                self._set_state(TcpDisconnected())
+            raise ConnectionError("TCP connection closed by peer")
+
+        decoded = data.decode(self.encoding)
+        _LOGGER.debug("TCP RECV ← %r", decoded)
+        return decoded.rstrip()
+
     async def read(self, n: int = DEF_READ_LENGTH) -> str:
         if not isinstance(self._state, TcpConnected):
             raise ConnectionError("TCP _transport not connected")
@@ -117,3 +135,10 @@ class TcpTransport:
         decoded = data.decode(self.encoding)
         _LOGGER.debug("TCP RECV ← %r", decoded)
         return decoded
+
+    async def writeln(self, data: str) -> None:
+        if not isinstance(self._state, TcpConnected):
+            raise ConnectionError("TCP _transport not connected")
+        if not data.endswith(self.delimiter):
+            data += self.delimiter
+        await self.write(data)

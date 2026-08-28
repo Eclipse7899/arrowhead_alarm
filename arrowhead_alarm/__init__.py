@@ -1,7 +1,6 @@
 ﻿"""Arrowhead alarm Integration."""
 
 from arrowhead_alarm.api.factory import create_eci_tcp_client
-from arrowhead_alarm.types import LoginCredentials
 from arrowhead_alarm.protocol import (
     AlarmState,
     Area,
@@ -12,6 +11,7 @@ from arrowhead_alarm.protocol import (
 )
 from arrowhead_alarm.protocol.models import ArmingMode, Output
 from arrowhead_alarm.transport.tcp import TcpTransport
+from arrowhead_alarm.types import LoginCredentials
 
 __all__ = [
     "PanelState",

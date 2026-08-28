@@ -2,49 +2,29 @@
 import asyncio
 from typing import Generic, TypeVar, Callable
 
-from arrowhead_alarm.types import (
+from .types import (
     CollectionResult,
     Waiting,
     Done,
-    Collector,
-)
+    Collector, )
 
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 
-class LineCollector(Generic[_U]):
-    """A collector that collects characters until a delimiter is found."""
-    def __init__(
-        self,
-        delimiter: str,
-    ) -> None:
-        """Initialize the LineCollector."""
-        self.delimiter = delimiter
-        self._buffer: str = ""
-
-    def feed(self, data: str) -> CollectionResult[str]:
-        """Feed data to the collector and check for the delimiter."""
-        self._buffer += data
-        if self.delimiter in self._buffer:
-            line, _, remainder = self._buffer.partition(self.delimiter)
-            self._buffer = remainder
-            return Done(line)
-        else:
-            return Waiting()
-
 
 class LineCountCollector(Generic[_U]):
-    """A collector that counts the number of _lines in the request_data."""
+    """A transformer that counts the number of _lines in the request_data."""
+
     def __init__(
-        self,
-        expected: int,
+            self,
+            expected: int,
     ) -> None:
         """Initialize the LineCountCollector."""
         self.expected = expected
         self._lines: list[str] = []
 
-    def feed(self, data: str) -> CollectionResult[list[str]]:
-        """Feed request to the collector and count the number of _lines."""
+    def collect(self, data: str) -> CollectionResult[list[str]]:
+        """Feed request to the transformer and count the number of _lines."""
         self._lines.append(data)
         if len(self._lines) < self.expected:
             return Waiting()
@@ -81,18 +61,12 @@ class SlidingCollectorCompletion(Generic[_T, _U]):
             self._countdown_task.cancel()
         self._countdown_task = asyncio.create_task(self._timer())
 
-    def feed(self, data: _T) -> None:
+    def collect(self, data: _T) -> None:
         result = self._evaluator(data)
 
         match result:
             case Done(value):
                 self._last_done = value
                 self._reset_timer()
-
             case Waiting():
                 pass
-
-            case _:
-                raise NotImplementedError(
-                    f"Unknown CollectionStatus type: {type(result).__str__}"
-                )

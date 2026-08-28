@@ -1,7 +1,6 @@
 from typing import Dict
 
-from arrowhead_alarm import Zone, Area, AlarmState, Output, PanelState
-from arrowhead_alarm.protocol import Expander
+from .models import Expander, Zone, Area, AlarmState, Output, PanelState, VersionInfo
 
 DEFAULT_MAX_ZONES = 8
 DEFAULT_MAX_USERS = 2000
@@ -13,6 +12,8 @@ DEFAULT_VIRTUAL_KEYPAD_NUM = 32
 ZONE_EXPANDER_COUNT = 32
 OUTPUT_EXPANDER_COUNT = 8
 PROX_EXPANDER_COUNT = 32
+
+MINIMUM_MODE_4_PANEL_VERSION = VersionInfo(major_version=10, minor_version=3, patch_version=50)
 
 
 def get_default_zones() -> Dict[int, Zone]:
