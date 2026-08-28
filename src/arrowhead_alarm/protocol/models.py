@@ -130,7 +130,11 @@ class CommandPayload:
     args: list[int | str] | None = None
 
     def build(self) -> str:
-        """Build the command string."""
+        """Build the command string.
+
+        Returns:
+            The formatted command string.
+        """
         line = self.keyword
         if self.args:
             joined = " ".join(str(arg) for arg in self.args)

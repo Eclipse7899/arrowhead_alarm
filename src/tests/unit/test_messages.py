@@ -1,7 +1,4 @@
-﻿"""Tests for elitecloud_alarm.messages module."""
-# ruff: noqa
-
-import pytest
+﻿import pytest
 
 from arrowhead_alarm.protocol.models import StatusFlags
 from arrowhead_alarm.protocol.types import Success

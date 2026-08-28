@@ -5,8 +5,8 @@ from .exceptions import (
 )
 from .messages import get_status_operation
 from .models import (
-    OkResponse,
     ErrorResponse,
+    OkResponse,
     PanelState,
     PanelVersion,
     ProtocolMode,
@@ -15,8 +15,9 @@ from .models import (
 from .types import (
     Failure,
     Result,
+    ResultTransformer,
     Success,
-    Transformer, ResultTransformer,
+    Transformer,
 )
 from .util import (
     parse_panel_version_string,
@@ -24,7 +25,9 @@ from .util import (
 )
 
 
-def get_cmd_keyword_transformer(keyword: str) -> ResultTransformer[Response, Response, ProtocolErrorCode]:
+def get_cmd_keyword_transformer(
+        keyword: str
+) -> ResultTransformer[Response, Response, ProtocolErrorCode]:
     """Create an _collector that checks a Response keyword."""
 
     def cmd_keyword_evaluator(resp: Response) -> Result[Response, ProtocolErrorCode]:

@@ -1,5 +1,3 @@
-# ruff: noqa
-
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 

@@ -1,4 +1,5 @@
 """Utility functions for the Arrowhead Alarm protocol."""
+
 import re
 from typing import Final
 
@@ -20,7 +21,7 @@ from .models import (
     PanelVersion,
     Response,
     StatusResponse,
-    VersionInfo
+    VersionInfo,
 )
 from .types import Failure, Result, Success
 
@@ -50,7 +51,7 @@ def is_command_error(data: str) -> bool:
 
 
 def get_protocol_exception(
-        protocol_error: ProtocolErrorCode, request: str, response: str
+    protocol_error: ProtocolErrorCode, request: str, response: str
 ) -> ProtocolError:
     """Return the appropriate ErrorResponse exception based on the error code.
 

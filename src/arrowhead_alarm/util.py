@@ -4,7 +4,7 @@ import asyncio
 import logging
 from asyncio import Task
 from dataclasses import dataclass
-from typing import Any, TypeVar, Generic, Callable
+from typing import Any, Callable, Generic, TypeVar
 
 from .protocol.models import VersionInfo
 
@@ -45,10 +45,16 @@ def is_mode_4_supported(version: VersionInfo) -> bool:
 @dataclass
 class LoginCredentials:
     """Credentials for the alarm panel connection."""
+
     username: str
     password: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Validate credentials after initialization.
+
+        Raises:
+            ValueError: If username or password is empty.
+        """
         if not self.username:
             raise ValueError("Username cannot be empty.")
         if not self.password:

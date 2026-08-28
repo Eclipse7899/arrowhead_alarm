@@ -1,10 +1,11 @@
 """Factory functions for creating an instance of the client."""
-from .mode_2_client import Mode2Client
+
 from ..util import LoginCredentials
+from .mode_2_client import Mode2Client
 
 
 def create_mode_2_client(
-        host: str, port: int, username: str | None = None, password: str | None = None
+    host: str, port: int, username: str | None = None, password: str | None = None
 ) -> Mode2Client:
     """Create an EciClient instance.
 

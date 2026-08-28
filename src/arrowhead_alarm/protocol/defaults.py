@@ -1,6 +1,7 @@
+"""Default data structures and constants for Arrowhead alarm panels."""
 from typing import Dict
 
-from .models import Expander, Zone, Area, AlarmState, Output, PanelState, VersionInfo
+from .models import AlarmState, Area, Expander, Output, PanelState, VersionInfo, Zone
 
 DEFAULT_MAX_ZONES = 8
 DEFAULT_MAX_USERS = 2000
@@ -17,7 +18,11 @@ MINIMUM_MODE_4_PANEL_VERSION = VersionInfo(major_version=10, minor_version=3, pa
 
 
 def get_default_zones() -> Dict[int, Zone]:
-    """Generate default zones based on default constants."""
+    """Generate default zones based on default constants.
+
+    Returns:
+        A dictionary mapping zone numbers to default Zone objects.
+    """
     return {
         i: Zone(
             zone_number=i,
@@ -34,7 +39,11 @@ def get_default_zones() -> Dict[int, Zone]:
 
 
 def get_default_areas() -> Dict[int, Area]:
-    """Generate default areas based on default constants."""
+    """Generate default areas based on default constants.
+
+    Returns:
+        A dictionary mapping area numbers to default Area objects.
+    """
     return {
         i: Area(area_number=i, state=AlarmState.DISARMED, ready_to_arm=True)
         for i in range(1, DEFAULT_MAX_AREAS + 1)
@@ -42,7 +51,14 @@ def get_default_areas() -> Dict[int, Area]:
 
 
 def get_expanders(count: int) -> Dict[int, Expander]:
-    """Generate default expanders based on default constants."""
+    """Generate default expanders based on default constants.
+
+    Args:
+        count: The number of expanders to generate.
+
+    Returns:
+        A dictionary mapping expander IDs to default Expander objects.
+    """
     return {
         i: Expander(
             expander_id=i,
@@ -56,7 +72,11 @@ def get_expanders(count: int) -> Dict[int, Expander]:
 
 
 def get_default_outputs() -> Dict[int, Output]:
-    """Generate default outputs based on default constants."""
+    """Generate default outputs based on default constants.
+
+    Returns:
+        A dictionary mapping output numbers to default Output objects.
+    """
     return {
         i: Output(output_number=i, on=False)
         for i in range(1, DEFAULT_MAX_OUTPUTS + 1)
@@ -64,6 +84,11 @@ def get_default_outputs() -> Dict[int, Output]:
 
 
 def get_default_state() -> PanelState:
+    """Generate the default panel state.
+
+    Returns:
+        A PanelState object initialized with default values.
+    """
     return PanelState(
         ready_to_arm=False,
         battery_fault=False,

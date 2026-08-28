@@ -83,12 +83,13 @@ exclude = [
     "buck-out",
     "build",
     "dist",
+    "src/tests",
     "node_modules",
     "site-packages",
     "venv",
 ]
 
-line-length = 88
+line-length = 100
 indent-width = 4
 
 target-version = "py314"

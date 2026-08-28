@@ -1,10 +1,16 @@
+"""Base protocol client module for Arrowhead alarm systems."""
+
 import logging
 from abc import ABC
 
-from ..protocol.commands import version_command, set_output_command, bypass_zone_command, \
-    unbypass_zone_command, \
-    output_state_command
-from ..protocol.models import ProtocolMode, PanelVersion
+from ..protocol.commands import (
+    bypass_zone_command,
+    output_state_command,
+    set_output_command,
+    unbypass_zone_command,
+    version_command,
+)
+from ..protocol.models import PanelVersion, ProtocolMode
 from ..transport.authenticated_session import AuthenticatedSession
 from ..transport.command_client import CommandClient
 from ..transport.tcp import TcpTransport
@@ -18,17 +24,42 @@ class ProtocolClient(ABC):
 
     mode: ProtocolMode
 
-    def __init__(self, host: str, port: int, credentials: LoginCredentials | None) -> None:
+    def __init__(
+        self, host: str, port: int, credentials: LoginCredentials | None
+    ) -> None:
+        """Initialize the protocol client.
+
+        Args:
+            host: Hostname or IP address of the alarm panel.
+            port: TCP port number of the alarm panel.
+            credentials: Login credentials for authentication, or None.
+        """
         session = AuthenticatedSession(TcpTransport(host, port), credentials)
         self._client = CommandClient(session)
 
     async def query_version(self) -> PanelVersion:
+        """Query the alarm panel version.
+
+        Returns:
+            The panel version information.
+
+        Raises:
+            Exception: If querying the version fails.
+        """
         resp = await self._client.request(version_command())
         if resp.is_ok:
             return resp.value
         raise resp.error
 
     async def output_on(self, output_number: int) -> None:
+        """Turn on a specific output.
+
+        Args:
+            output_number: The output number to turn on.
+
+        Raises:
+            Exception: If turning on the output fails.
+        """
         _LOGGER.info("Turning on output %d", output_number)
         result = await self._client.request(set_output_command(output_number, True))
         if result.is_ok:
@@ -38,15 +69,36 @@ class ProtocolClient(ABC):
             raise result.error
 
     async def output_off(self, output_number: int) -> None:
+        """Turn off a specific output.
+
+        Args:
+            output_number: The output number to turn off.
+
+        Raises:
+            Exception: If turning off the output fails.
+        """
         _LOGGER.info("Turning off output %d", output_number)
         result = await self._client.request(set_output_command(output_number, False))
         if result.is_ok:
             _LOGGER.info("Output %d turned off", output_number)
         else:
-            _LOGGER.error("Error turning off output %d: %s", output_number, result.error)
+            _LOGGER.error(
+                "Error turning off output %d: %s", output_number, result.error
+            )
             raise result.error
 
     async def query_output(self, output_number: int) -> bool:
+        """Query the state of a specific output.
+
+        Args:
+            output_number: The output number to query.
+
+        Returns:
+            True if the output is active, False otherwise.
+
+        Raises:
+            Exception: If querying the output fails.
+        """
         _LOGGER.info("Querying output %d state", output_number)
         result = await self._client.request(output_state_command(output_number))
         if result.is_ok:
@@ -55,6 +107,14 @@ class ProtocolClient(ABC):
         raise result.error
 
     async def bypass_zone(self, zone_number: int) -> None:
+        """Bypass a specific zone.
+
+        Args:
+            zone_number: The zone number to bypass.
+
+        Raises:
+            Exception: If bypassing the zone fails.
+        """
         _LOGGER.info("Bypassing zone %d", zone_number)
         result = await self._client.request(bypass_zone_command(zone_number))
         if result.is_ok:
@@ -64,6 +124,14 @@ class ProtocolClient(ABC):
             raise result.error
 
     async def unbypass_zone(self, zone_number: int) -> None:
+        """Unbypass a specific zone.
+
+        Args:
+            zone_number: The zone number to unbypass.
+
+        Raises:
+            Exception: If unbypassing the zone fails.
+        """
         _LOGGER.info("Unbypassing zone %d", zone_number)
         result = await self._client.request(unbypass_zone_command(zone_number))
         if result.is_ok:

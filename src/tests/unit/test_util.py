@@ -1,6 +1,4 @@
-﻿# ruff: noqa
-
-import asyncio
+﻿import asyncio
 
 import pytest
 

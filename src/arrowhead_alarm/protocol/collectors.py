@@ -1,30 +1,32 @@
 ﻿"""Module for resp collectors that process incoming resp and produce results."""
+
 import asyncio
-from typing import Generic, TypeVar, Callable
+from typing import Callable, Generic, TypeVar
 
 from .types import (
     CollectionResult,
-    Waiting,
+    Collector,
     Done,
-    Collector, )
+    Waiting,
+)
 
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 
 
 class LineCountCollector(Generic[_U]):
-    """A transformer that counts the number of _lines in the request_data."""
+    """A collector that collects a number of lines and returns them as a list."""
 
     def __init__(
-            self,
-            expected: int,
+        self,
+        expected: int,
     ) -> None:
         """Initialize the LineCountCollector."""
         self.expected = expected
         self._lines: list[str] = []
 
     def collect(self, data: str) -> CollectionResult[list[str]]:
-        """Feed request to the transformer and count the number of _lines."""
+        """Collect incoming data and return the collected lines."""
         self._lines.append(data)
         if len(self._lines) < self.expected:
             return Waiting()
@@ -33,12 +35,21 @@ class LineCountCollector(Generic[_U]):
 
 
 class SlidingCollectorCompletion(Generic[_T, _U]):
+    """A collector that debounces completion events within a sliding time window."""
+
     def __init__(
-            self,
-            evaluator: Collector[_T, _U],
-            callback: Callable[[_U], None],
-            window: float
+        self,
+        evaluator: Collector[_T, _U],
+        callback: Callable[[_U], None],
+        window: float,
     ) -> None:
+        """Initialize the SlidingCollectorCompletion.
+
+        Args:
+            evaluator: Collector function or callable that processes incoming items.
+            callback: Callback function called with the completed value after window expires.
+            window: Debounce window duration in seconds.
+        """
         self._evaluator = evaluator
         self._callback = callback
         self._last_done: _U | None = None
@@ -62,6 +73,11 @@ class SlidingCollectorCompletion(Generic[_T, _U]):
         self._countdown_task = asyncio.create_task(self._timer())
 
     def collect(self, data: _T) -> None:
+        """Collect incoming data and reset the completion timer if done.
+
+        Args:
+            data: Incoming data item to process.
+        """
         result = self._evaluator(data)
 
         match result:

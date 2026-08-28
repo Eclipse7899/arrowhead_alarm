@@ -1,12 +1,14 @@
+"""Type definitions, monads, and pipeline utilities for protocol handling."""
+
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import (
     Callable,
     Generic,
+    Literal,
     TypeAlias,
     TypeVar,
-    Literal,
 )
 
 if sys.version_info >= (3, 11):
@@ -26,6 +28,7 @@ ResultTransformer: TypeAlias = Callable[[_T], "Result[_U, _E]"]
 
 class ResultBase(ABC, Generic[_T, _E]):
     """Abstract base class for Result types."""
+
     is_ok: bool
 
     @abstractmethod
@@ -162,19 +165,13 @@ class ResultPipeline(Generic[_T, _U, _E]):
 
     _transformer: ResultTransformer[_T, _U, _E]
 
-    def run_result(self, result: Result[_T, _E]) -> Result[_U, _E]:
-        """Run the pipeline starting from a Result.
+    def bind(
+        self, other: ResultTransformer[_U, _V, _E]
+    ) -> "ResultPipeline[_T, _V, _E]":
+        """Bind the pipeline to another ResultTransformer.
 
         Args:
-            result: A Result instance to start the pipeline.
-        """
-        return result.bind(self._transformer)
-
-    def bind(self, other: ResultTransformer[_U, _V, _E]) -> "ResultPipeline[_T, _V, _E]":
-        """Chain another result_transformer function to the ResultPipeline.
-
-        Args:
-            other: A function that takes command of type _U and returns a Result[_V, _E].
+            other: A function that takes a value of type _U and returns a Result[_V, _E].
 
         Returns: A new ResultPipeline that applies the original result_transformer
         followed by the other result_transformer.
@@ -183,27 +180,11 @@ class ResultPipeline(Generic[_T, _U, _E]):
         return ResultPipeline(lambda data: self._transformer(data).bind(other))
 
     def map(self, other: Transformer[_U, _V]) -> "ResultPipeline[_T, _V, _E]":
-        """Chain another result_transformer function to the ResultPipeline.
-
-        Args:
-            other: A function that takes command of type _U and returns a value of type _V.
-
-        Returns: A new ResultPipeline that applies the original result_transformer
-        followed by the other result_transformer.
-
-        """
+        """Map the value of the pipeline to a new value."""
         return ResultPipeline(lambda data: self._transformer(data).map(other))
 
     def map_error(self, other: Transformer[_E, _F]) -> "ResultPipeline[_T, _U, _F]":
-        """Chain another error result_transformer function to the ResultPipeline.
-
-        Args:
-            other: A function that takes an error of type _E and returns a Result[_T, _F].
-
-        Returns: A new ResultPipeline that applies the original result_transformer
-        followed by the other error result_transformer.
-
-        """
+        """Map the error of the pipeline to a new value."""
         return ResultPipeline(lambda data: self._transformer(data).map_error(other))
 
     def unwrap(self) -> ResultTransformer[_T, _U, _E]:
@@ -218,7 +199,7 @@ class CollectionResultBase(ABC, Generic[_T]):
 
     @abstractmethod
     def bind(
-            self, func: Transformer[_T, "CollectionResult[_U]"]
+        self, func: Transformer[_T, "CollectionResult[_U]"]
     ) -> "CollectionResult[_U]":
         """Bind the result to a function that returns another result."""
         ...
@@ -237,13 +218,13 @@ class Done(CollectionResultBase[_T]):
     is_done: Literal[True] = True
 
     @override
-    def bind(self, func: Transformer[_T, "CollectionResult[_U]"]) -> "CollectionResult[_U]":
-        """Bind the Done result to a function that returns another CollectionResult."""
+    def bind(
+        self, func: Transformer[_T, "CollectionResult[_U]"]
+    ) -> "CollectionResult[_U]":
         return func(self.value)
 
     @override
     def map(self, func: Transformer[_T, _U]) -> "CollectionResult[_U]":
-        """Map the Done result to a new value."""
         return Done(func(self.value))
 
 
@@ -254,13 +235,13 @@ class Waiting(CollectionResultBase[_T]):
     is_done: Literal[False] = False
 
     @override
-    def bind(self, func: Transformer[_T, "CollectionResult[_U]"]) -> "CollectionResult[_U]":
-        """Bind the Waiting result to a function that returns another CollectionResult."""
+    def bind(
+        self, func: Transformer[_T, "CollectionResult[_U]"]
+    ) -> "CollectionResult[_U]":
         return Waiting()
 
     @override
     def map(self, func: Transformer[_T, _U]) -> "CollectionResult[_U]":
-        """Map the Waiting result to a new value."""
         return Waiting()
 
 
@@ -283,18 +264,23 @@ class CollectorPipeline(Generic[_T, _U]):
         return CollectorPipeline(lambda data: Done(data))
 
     def __init__(self, collector: Collector[_T, _U]) -> None:
+        """Initialize the CollectorPipeline.
+
+        Args:
+            collector: The underlying collector function to execute.
+        """
         self._collector: Collector[_T, _U] = collector
 
     def bind(
-            self,
-            other: Collector[_U, _V],
+        self,
+        other: Collector[_U, _V],
     ) -> "CollectorPipeline[_T, _V]":
         """Chain the current _collector with another _collector."""
         return CollectorPipeline(lambda data: self._collector(data).bind(other))
 
     def map(
-            self,
-            func: Transformer[_U, _V],
+        self,
+        func: Transformer[_U, _V],
     ) -> "CollectorPipeline[_T, _V]":
         """Map the current _collector's result to a new value."""
         return CollectorPipeline(lambda data: self._collector(data).map(func))
@@ -304,7 +290,7 @@ class CollectorPipeline(Generic[_T, _U]):
         return self._collector
 
     def compile(self) -> Callable[[_T], _U | None]:
-        """Return a function that completes the _collector and returns the value or None."""
+        """Return a function that return completed value or None."""
 
         def complete_collector(data: _T) -> _U | None:
             result = self._collector(data)
@@ -319,6 +305,7 @@ class CollectorPipeline(Generic[_T, _U]):
 @dataclass
 class CollectorContext(Generic[_T, _U]):
     """CollectorContext for a transformer."""
+
     data: _T
     original: _U
 
@@ -332,9 +319,18 @@ class CollectorContext(Generic[_T, _U]):
         return CollectorContext(func(self.data), self.original)
 
     def bind(
-            self,
-            func: Callable[[_T], CollectionResult[_V]],
+        self,
+        func: Callable[[_T], CollectionResult[_V]],
     ) -> CollectionResult["CollectorContext[_V, _U]"]:
+        """Bind a collection function to the current context data.
+
+        Args:
+            func: Function that processes the context data and returns a
+            CollectionResult.
+
+        Returns:
+            A CollectionResult containing the updated context or waiting status.
+        """
         return func(self.data).map(
             lambda data: CollectorContext(
                 original=self.original,
@@ -345,5 +341,7 @@ class CollectorContext(Generic[_T, _U]):
 
 @dataclass
 class Command(Generic[_T]):
+    """Represents a protocol command with its request data and response collector."""
+
     data: str
     collector: Collector[str, _T]

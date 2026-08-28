@@ -1,41 +1,60 @@
 """Commands for interacting with the Arrowhead alarm panel."""
-from typing import TypeVar, Callable
 
-from .const import CMD_DISARM, CMD_MODE, CMD_OUTPUT, CMD_ARM_AWAY, CMD_ARM_STAY, \
-    CMD_BYPASS, CMD_UNBYPASS, CMD_OUTPUT_ON, CMD_OUTPUT_OFF, CMD_VERSION, CMD_ARM_AREA_AWAY, CMD_ARM_AREA_STAY
-from .exceptions import ProtocolErrorCode, ProtocolError
+from typing import Callable, TypeVar
+
+from .const import (
+    CMD_ARM_AREA_AWAY,
+    CMD_ARM_AREA_STAY,
+    CMD_ARM_AWAY,
+    CMD_ARM_STAY,
+    CMD_BYPASS,
+    CMD_DISARM,
+    CMD_MODE,
+    CMD_OUTPUT,
+    CMD_OUTPUT_OFF,
+    CMD_OUTPUT_ON,
+    CMD_UNBYPASS,
+    CMD_VERSION,
+)
+from .exceptions import ProtocolError, ProtocolErrorCode
 from .models import (
+    ArmingMode,
+    CommandPayload,
     PanelVersion,
-    ProtocolMode, ArmingMode, CommandPayload,
+    ProtocolMode,
 )
 from .transformers import (
     boolean_response_transformer,
     cmd_result_transformer,
     create_version_transformer,
+    get_cmd_keyword_transformer,
     int_response_transformer,
-    mode_response_transformer, get_cmd_keyword_transformer
+    mode_response_transformer,
 )
-from .types import ResultPipeline, Collector, CollectorPipeline, Result, Success, CollectorContext, Command
+from .types import (
+    Collector,
+    CollectorContext,
+    CollectorPipeline,
+    Command,
+    Result,
+    ResultPipeline,
+    Success,
+)
 from .util import convert_to_response, get_protocol_exception
 
 _T = TypeVar("_T")
 
 
-def _get_cmd_command(request: str, transformer: Callable[[str], Result[_T, ProtocolErrorCode]]) -> Collector[
-    str, Result[_T, ProtocolError]]:
+def _get_cmd_command(
+    request: str, transformer: Callable[[str], Result[_T, ProtocolErrorCode]]
+) -> Collector[str, Result[_T, ProtocolError]]:
     return (
         CollectorPipeline.of_string()
         .map(CollectorContext.of_value)
-        .map(
-            lambda context: context.map(transformer)
-        )
+        .map(lambda context: context.map(transformer))
         .map(
             lambda context: context.data.map_error(
-                lambda error: get_protocol_exception(
-                    error,
-                    request,
-                    context.original
-                )
+                lambda error: get_protocol_exception(error, request, context.original)
             )
         )
         .unwrap()
@@ -43,7 +62,7 @@ def _get_cmd_command(request: str, transformer: Callable[[str], Result[_T, Proto
 
 
 def _get_cmd_result_pipeline(
-        command_keyword: str,
+    command_keyword: str,
 ) -> ResultPipeline[str, str, ProtocolErrorCode]:
     """Create an _collector that processes a cmd response."""
     return (
@@ -56,33 +75,36 @@ def _get_cmd_result_pipeline(
 
 def _get_int_command(keyword: str, payload: str) -> Command[Result[int, ProtocolError]]:
     response_parser = (
-        _get_cmd_result_pipeline(keyword)
-        .bind(int_response_transformer)
-        .unwrap()
+        _get_cmd_result_pipeline(keyword).bind(int_response_transformer).unwrap()
     )
 
-    return Command(
-        payload,
-        _get_cmd_command(payload, response_parser)
-    )
+    return Command(payload, _get_cmd_command(payload, response_parser))
 
 
 def version_command() -> Command[Result[PanelVersion, ProtocolError]]:
+    """Create a command to query the panel version.
+
+    Returns:
+        A command object that resolves to the panel version or a protocol error.
+    """
     response_parser = (
-        _get_cmd_result_pipeline(CMD_VERSION)
-        .bind(create_version_transformer)
-        .unwrap()
+        _get_cmd_result_pipeline(CMD_VERSION).bind(create_version_transformer).unwrap()
     )
 
     payload = CMD_VERSION
 
-    return Command(
-        payload,
-        _get_cmd_command(payload, response_parser)
-    )
+    return Command(payload, _get_cmd_command(payload, response_parser))
 
 
 def mode_command(mode: ProtocolMode) -> Command[Result[ProtocolMode, ProtocolError]]:
+    """Create a command to set the protocol mode.
+
+    Args:
+        mode: The protocol mode to set.
+
+    Returns:
+        A command object that resolves to the set protocol mode or a protocol error.
+    """
     response_parser = (
         _get_cmd_result_pipeline(CMD_MODE)
         .bind(int_response_transformer)
@@ -92,13 +114,18 @@ def mode_command(mode: ProtocolMode) -> Command[Result[ProtocolMode, ProtocolErr
 
     payload = CommandPayload(CMD_MODE, [mode.value]).build()
 
-    return Command(
-        payload,
-        _get_cmd_command(payload, response_parser)
-    )
+    return Command(payload, _get_cmd_command(payload, response_parser))
 
 
 def arm_button_command(mode: ArmingMode) -> Command[Result[None, ProtocolError]]:
+    """Create a command to arm the system without a user code.
+
+    Args:
+        mode: The arming mode (AWAY or STAY).
+
+    Returns:
+        A command object that resolves to None on success or a protocol error.
+    """
     match mode:
         case ArmingMode.AWAY:
             keyword = CMD_ARM_AWAY
@@ -107,19 +134,24 @@ def arm_button_command(mode: ArmingMode) -> Command[Result[None, ProtocolError]]
 
     payload = CommandPayload(keyword, []).build()
 
-    evaluator = (
-        _get_cmd_result_pipeline(keyword)
-        .bind(lambda _: Success(None))
-        .unwrap()
-    )
+    evaluator = _get_cmd_result_pipeline(keyword).bind(lambda _: Success(None)).unwrap()
 
-    return Command(
-        payload,
-        _get_cmd_command(payload, evaluator)
-    )
+    return Command(payload, _get_cmd_command(payload, evaluator))
 
 
-def arm_user_command(user_id: int, pin: int, mode: ArmingMode) -> Command[Result[int, ProtocolError]]:
+def arm_user_command(
+    user_id: int, pin: int, mode: ArmingMode
+) -> Command[Result[int, ProtocolError]]:
+    """Create a command to arm the system with a user ID and PIN.
+
+    Args:
+        user_id: The user slot/ID number.
+        pin: The user's PIN code.
+        mode: The arming mode (AWAY or STAY).
+
+    Returns:
+        A command object that resolves to the result integer or a protocol error.
+    """
     match mode:
         case ArmingMode.AWAY:
             keyword = CMD_ARM_AWAY
@@ -131,7 +163,18 @@ def arm_user_command(user_id: int, pin: int, mode: ArmingMode) -> Command[Result
     return _get_int_command(keyword, payload)
 
 
-def arm_no_pin_command(user: int, mode: ArmingMode) -> Command[Result[int, ProtocolError]]:
+def arm_no_pin_command(
+    user: int, mode: ArmingMode
+) -> Command[Result[int, ProtocolError]]:
+    """Create a command to arm the system as a user without PIN.
+
+    Args:
+        user: The user slot/ID number.
+        mode: The arming mode (AWAY or STAY).
+
+    Returns:
+        A command object that resolves to the result integer or a protocol error.
+    """
     match mode:
         case ArmingMode.AWAY:
             keyword = CMD_ARM_AWAY
@@ -142,7 +185,18 @@ def arm_no_pin_command(user: int, mode: ArmingMode) -> Command[Result[int, Proto
     return _get_int_command(keyword, payload)
 
 
-def arm_area_command_mode_2(area: int, mode: ArmingMode) -> Command[Result[int, ProtocolError]]:
+def arm_area_command_mode_2(
+    area: int, mode: ArmingMode
+) -> Command[Result[int, ProtocolError]]:
+    """Create a command to arm an area in Mode 2.
+
+    Args:
+        area: The area number to arm.
+        mode: The arming mode (AWAY or STAY).
+
+    Returns:
+        A command object that resolves to the result integer or a protocol error.
+    """
     match mode:
         case ArmingMode.AWAY:
             keyword = CMD_ARM_AWAY
@@ -154,7 +208,18 @@ def arm_area_command_mode_2(area: int, mode: ArmingMode) -> Command[Result[int, 
     return _get_int_command(keyword, payload)
 
 
-def arm_area_command_mode_4(area: int, mode: ArmingMode) -> Command[Result[int, ProtocolError]]:
+def arm_area_command_mode_4(
+    area: int, mode: ArmingMode
+) -> Command[Result[int, ProtocolError]]:
+    """Create a command to arm an area in Mode 4.
+
+    Args:
+        area: The area number to arm.
+        mode: The arming mode (AWAY or STAY).
+
+    Returns:
+        A command object that resolves to the result integer or a protocol error.
+    """
     match mode:
         case ArmingMode.AWAY:
             keyword = CMD_ARM_AREA_AWAY
@@ -166,26 +231,69 @@ def arm_area_command_mode_4(area: int, mode: ArmingMode) -> Command[Result[int, 
 
 
 def disarm_user_command(user: int, pin: int) -> Command[Result[int, ProtocolError]]:
+    """Create a command to disarm as a user with PIN.
+
+    Args:
+        user: The user slot/ID number.
+        pin: The user's PIN code.
+
+    Returns:
+        A command object that resolves to the result integer or a protocol error.
+    """
     payload = CommandPayload(CMD_DISARM, [user, pin]).build()
     return _get_int_command(CMD_DISARM, payload)
 
 
 def disarm_area_command(area: int, pin: int) -> Command[Result[int, ProtocolError]]:
+    """Create a command to disarm an area with PIN.
+
+    Args:
+        area: The area number to disarm.
+        pin: The PIN code.
+
+    Returns:
+        A command object that resolves to the result integer or a protocol error.
+    """
     payload = CommandPayload(CMD_DISARM, [area, pin]).build()
     return _get_int_command(CMD_DISARM, payload)
 
 
 def bypass_zone_command(zone: int) -> Command[Result[int, ProtocolError]]:
+    """Create a command to bypass a zone.
+
+    Args:
+        zone: The zone number to bypass.
+
+    Returns:
+        A command object that resolves to the result integer or a protocol error.
+    """
     payload = CommandPayload(CMD_BYPASS, [zone]).build()
     return _get_int_command(CMD_BYPASS, payload)
 
 
 def unbypass_zone_command(zone: int) -> Command[Result[int, ProtocolError]]:
+    """Create a command to unbypass a zone.
+
+    Args:
+        zone: The zone number to unbypass.
+
+    Returns:
+        A command object that resolves to the result integer or a protocol error.
+    """
     payload = CommandPayload(CMD_UNBYPASS, [zone]).build()
     return _get_int_command(CMD_UNBYPASS, payload)
 
 
 def set_output_command(output: int, on: bool) -> Command[Result[int, ProtocolError]]:
+    """Create a command to set the state of an output.
+
+    Args:
+        output: The output number to configure.
+        on: True to turn on, False to turn off.
+
+    Returns:
+        A command object that resolves to the result integer or a protocol error.
+    """
     if on:
         keyword = CMD_OUTPUT_ON
     else:
@@ -197,14 +305,17 @@ def set_output_command(output: int, on: bool) -> Command[Result[int, ProtocolErr
 
 
 def output_state_command(output: int) -> Command[Result[bool, ProtocolError]]:
+    """Create a command to query the state of an output.
+
+    Args:
+        output: The output number to query.
+
+    Returns:
+        A command object that resolves to a boolean state or a protocol error.
+    """
     payload = CommandPayload(CMD_OUTPUT, [output]).build()
     evaluator = (
-        _get_cmd_result_pipeline(CMD_OUTPUT)
-        .bind(boolean_response_transformer)
-        .unwrap()
+        _get_cmd_result_pipeline(CMD_OUTPUT).bind(boolean_response_transformer).unwrap()
     )
 
-    return Command(
-        payload,
-        _get_cmd_command(payload, evaluator)
-    )
+    return Command(payload, _get_cmd_command(payload, evaluator))
