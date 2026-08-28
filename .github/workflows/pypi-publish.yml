@@ -28,13 +28,13 @@ jobs:
         run: uv sync --locked --all-extras --dev
 
       - name: Run Ruff
-        run: ruff check --output-format=github src
+        run: uvx ruff check --output-format=github src
 
       - name: Run Ty
-        run: ty check --output-format=github src
+        run: uvx ty check --output-format=github src
 
       - name: Run tests
-        run: uv _collector pytest src/tests
+        run: uvx uv run pytest src/tests
 
   release-build:
     runs-on: ubuntu-latest
