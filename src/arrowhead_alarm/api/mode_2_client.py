@@ -1,9 +1,9 @@
 import logging
 
-from ..util import LoginCredentials
 from .protocol_client import ProtocolClient
 from ..protocol.commands import arm_area_command_mode_2, disarm_area_command
 from ..protocol.models import ProtocolMode, ArmingMode
+from ..util import LoginCredentials
 
 _LOGGER = logging.getLogger(__name__)
 

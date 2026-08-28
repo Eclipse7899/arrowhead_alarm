@@ -1,10 +1,10 @@
 import logging
 
-from ..util import LoginCredentials
 from .protocol_client import ProtocolClient
 from ..protocol.commands import arm_button_command, disarm_user_command, arm_no_pin_command, \
     arm_user_command
 from ..protocol.models import ProtocolMode, ArmingMode
+from ..util import LoginCredentials
 
 _LOGGER = logging.getLogger(__name__)
 

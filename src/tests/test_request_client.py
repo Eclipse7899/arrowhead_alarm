@@ -48,8 +48,8 @@ class TestRequestClientState:
         client.state_publisher.dispatch.assert_called_once_with(new_state)
 
     def test_set_state_does_not_dispatch_same_state(
-        self,
-        client,
+            self,
+            client,
     ):
         client.state_publisher.dispatch = Mock()
 
@@ -90,9 +90,9 @@ class TestRequestClientConnect:
 
     @pytest.mark.asyncio
     async def test_connect_sets_connected_state(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         session.read.side_effect = asyncio.CancelledError
 
@@ -104,9 +104,9 @@ class TestRequestClientConnect:
 
     @pytest.mark.asyncio
     async def test_connect_publishes_connected_state(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         session.read.side_effect = asyncio.CancelledError
         client.state_publisher.dispatch = Mock()
@@ -122,9 +122,9 @@ class TestRequestClientConnect:
 
     @pytest.mark.asyncio
     async def test_connect_does_not_start_worker_if_session_connect_fails(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         session.connect.side_effect = RuntimeError("connection failed")
 
@@ -138,9 +138,9 @@ class TestRequestClientConnect:
 class TestReadWorker:
     @pytest.mark.asyncio
     async def test_read_worker_reads_from_session(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         session.read.side_effect = asyncio.CancelledError
 
@@ -157,9 +157,9 @@ class TestReadWorker:
 
     @pytest.mark.asyncio
     async def test_read_worker_calls_handler_with_response(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         handler = Mock()
         client._handlers.add(handler)
@@ -176,9 +176,9 @@ class TestReadWorker:
 
     @pytest.mark.asyncio
     async def test_read_worker_continues_reading(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         handler = Mock()
         client._handlers.add(handler)
@@ -194,16 +194,16 @@ class TestReadWorker:
             await client._read_worker()
 
         assert handler.call_args_list == [
-            (( "response-1",),),
-            (( "response-2",),),
-            (( "response-3",),),
+            (("response-1",),),
+            (("response-2",),),
+            (("response-3",),),
         ]
 
     @pytest.mark.asyncio
     async def test_read_worker_calls_all_handlers(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         handler_1 = Mock()
         handler_2 = Mock()
@@ -226,9 +226,9 @@ class TestReadWorker:
 
     @pytest.mark.asyncio
     async def test_read_worker_does_not_call_handler_when_no_response(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         handler = Mock()
         client._handlers.add(handler)
@@ -242,9 +242,9 @@ class TestReadWorker:
 
     @pytest.mark.asyncio
     async def test_read_worker_can_be_cancelled(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         started = asyncio.Event()
 
@@ -271,8 +271,8 @@ class TestReadWorker:
 class TestUseHandler:
     @pytest.mark.asyncio
     async def test_handler_is_registered_inside_context(
-        self,
-        client,
+            self,
+            client,
     ):
         handler = Mock()
 
@@ -281,8 +281,8 @@ class TestUseHandler:
 
     @pytest.mark.asyncio
     async def test_handler_is_removed_after_context(
-        self,
-        client,
+            self,
+            client,
     ):
         handler = Mock()
 
@@ -293,8 +293,8 @@ class TestUseHandler:
 
     @pytest.mark.asyncio
     async def test_handler_is_removed_when_context_raises(
-        self,
-        client,
+            self,
+            client,
     ):
         handler = Mock()
 
@@ -307,8 +307,8 @@ class TestUseHandler:
 
     @pytest.mark.asyncio
     async def test_multiple_handlers_can_be_registered(
-        self,
-        client,
+            self,
+            client,
     ):
         handler_1 = Mock()
         handler_2 = Mock()
@@ -324,8 +324,8 @@ class TestUseHandler:
 
     @pytest.mark.asyncio
     async def test_same_handler_is_only_stored_once(
-        self,
-        client,
+            self,
+            client,
     ):
         handler = Mock()
 
@@ -339,9 +339,9 @@ class TestUseHandler:
 class TestDisconnect:
     @pytest.mark.asyncio
     async def test_disconnect_does_nothing_when_already_disconnected(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         await client.disconnect()
 
@@ -351,9 +351,9 @@ class TestDisconnect:
 
     @pytest.mark.asyncio
     async def test_disconnect_calls_session_disconnect(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         session.read.side_effect = asyncio.CancelledError
 
@@ -364,9 +364,9 @@ class TestDisconnect:
 
     @pytest.mark.asyncio
     async def test_disconnect_cancels_read_worker(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         session.read.side_effect = asyncio.CancelledError
 
@@ -380,9 +380,9 @@ class TestDisconnect:
 
     @pytest.mark.asyncio
     async def test_disconnect_sets_disconnected_state(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         session.read.side_effect = asyncio.CancelledError
 
@@ -393,9 +393,9 @@ class TestDisconnect:
 
     @pytest.mark.asyncio
     async def test_disconnect_publishes_disconnected_state(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         session.read.side_effect = asyncio.CancelledError
         client.state_publisher.dispatch = Mock()
@@ -413,9 +413,9 @@ class TestDisconnect:
 class TestSend:
     @pytest.mark.asyncio
     async def test_send_writes_request_data(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         future = asyncio.get_running_loop().create_future()
         future.set_result("response")
@@ -437,9 +437,9 @@ class TestSend:
 
     @pytest.mark.asyncio
     async def test_send_returns_response_future_result(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         future = asyncio.get_running_loop().create_future()
         future.set_result("my response")
@@ -460,9 +460,9 @@ class TestSend:
 
     @pytest.mark.asyncio
     async def test_send_registers_response_handler(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         handler = Mock()
 
@@ -493,9 +493,9 @@ class TestSend:
 
     @pytest.mark.asyncio
     async def test_send_removes_handler_after_response(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         handler = Mock()
 
@@ -516,9 +516,9 @@ class TestSend:
 
     @pytest.mark.asyncio
     async def test_send_removes_handler_when_future_fails(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         handler = Mock()
 
@@ -540,9 +540,9 @@ class TestSend:
 
     @pytest.mark.asyncio
     async def test_send_without_request_data_does_not_write(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         future = asyncio.get_running_loop().create_future()
         future.set_result("response")
@@ -562,9 +562,9 @@ class TestSend:
 
     @pytest.mark.asyncio
     async def test_send_writes_before_waiting_for_response(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         events = []
 
@@ -602,9 +602,9 @@ class TestSend:
 
     @pytest.mark.asyncio
     async def test_send_removes_handler_if_write_fails(
-        self,
-        client,
-        session,
+            self,
+            client,
+            session,
     ):
         handler = Mock()
 

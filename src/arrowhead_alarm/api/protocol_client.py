@@ -1,7 +1,6 @@
 import logging
 from abc import ABC
 
-from ..util import LoginCredentials
 from ..protocol.commands import version_command, set_output_command, bypass_zone_command, \
     unbypass_zone_command, \
     output_state_command
@@ -9,6 +8,7 @@ from ..protocol.models import ProtocolMode, PanelVersion
 from ..transport.authenticated_session import AuthenticatedSession
 from ..transport.command_client import CommandClient
 from ..transport.tcp import TcpTransport
+from ..util import LoginCredentials
 
 _LOGGER = logging.getLogger(__name__)
 

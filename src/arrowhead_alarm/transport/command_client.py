@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from typing import Callable, TypeVar
 
 from .authenticated_session import AuthenticatedSession
-from ..util import Publisher
 from ..protocol.commands import Command
+from ..util import Publisher
+
 
 @dataclass
 class ClientConnected:

@@ -1,11 +1,11 @@
 ﻿# ruff: noqa
 
 import asyncio
-from _asyncio import Task
 from asyncio import StreamReader, StreamWriter
 from typing import Awaitable, Callable
 
 import pytest
+from _asyncio import Task
 
 from arrowhead_alarm import VersionInfo, create_mode_2_client
 
@@ -36,7 +36,6 @@ async def open_mock(handler: Callable[[StreamReader, StreamWriter], Awaitable[No
 @pytest.mark.timeout(1)
 @pytest.mark.asyncio
 async def test_client_initialization() -> None:
-
     host, port = await open_mock(no_login_handler)
     client = create_mode_2_client(host, port)
     await client.connect()

@@ -41,6 +41,7 @@ def is_mode_4_supported(version: VersionInfo) -> bool:
     """
     return version >= VersionInfo(10, 3, 50)
 
+
 @dataclass
 class LoginCredentials:
     """Credentials for the alarm panel connection."""

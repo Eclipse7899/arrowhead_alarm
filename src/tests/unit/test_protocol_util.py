@@ -1,8 +1,8 @@
 """Tests for the protocol utility functions."""
 
+from arrowhead_alarm.protocol.models import ErrorResponse, OkResponse
 # ruff: noqa
 from arrowhead_alarm.protocol.types import Failure, Success
-from arrowhead_alarm.protocol.models import ErrorResponse, OkResponse
 from arrowhead_alarm.protocol.util import (
     convert_to_command_error,
     convert_to_command_ok,

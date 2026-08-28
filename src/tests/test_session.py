@@ -2,13 +2,9 @@
 
 import pytest
 
-from .const import (
-    AUTH_LOGIN_MSG,
-    AUTH_PASSWORD_PROMPT,
-    AUTH_WELCOME_MSG,
-)
-from transport.authenticated_session import AuthenticatedSession, SessionState
-from transport.tcp import TcpDisconnected
+from arrowhead_alarm.const import AUTH_PASSWORD_PROMPT, AUTH_LOGIN_MSG, AUTH_WELCOME_MSG
+from arrowhead_alarm.transport.authenticated_session import AuthenticatedSession, SessionState
+from arrowhead_alarm.transport.tcp import TcpDisconnected
 
 
 @pytest.fixture
@@ -64,8 +60,8 @@ class TestAuthenticatedSession:
         session.state_publisher.dispatch.assert_not_called()
 
     def test_transport_disconnect_sets_session_disconnected(
-        self,
-        session,
+            self,
+            session,
     ):
         session.state = SessionState.CONNECTED
         session.state_publisher.dispatch = Mock()
@@ -78,8 +74,8 @@ class TestAuthenticatedSession:
         )
 
     def test_transport_disconnect_does_not_dispatch_if_already_disconnected(
-        self,
-        session,
+            self,
+            session,
     ):
         session.state_publisher.dispatch = Mock()
 
@@ -89,9 +85,9 @@ class TestAuthenticatedSession:
         session.state_publisher.dispatch.assert_not_called()
 
     def test_connect_connects_transport_then_authenticates(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         session.authenticate = AsyncMock()
 
@@ -107,9 +103,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_connect_awaits_transport_before_authentication(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         calls = []
 
@@ -128,9 +124,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_disconnect_calls_transport_disconnect(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         await session.disconnect()
 
@@ -138,10 +134,10 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_authenticate_sends_username_then_password(
-        self,
-        session,
-        transport,
-        credentials,
+            self,
+            session,
+            transport,
+            credentials,
     ):
         transport.read.side_effect = [
             AUTH_LOGIN_MSG,
@@ -158,9 +154,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_authenticate_reads_three_prompts(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.side_effect = [
             AUTH_LOGIN_MSG,
@@ -174,9 +170,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_successful_authentication_sets_connected(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.side_effect = [
             AUTH_LOGIN_MSG,
@@ -194,9 +190,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_successful_authentication_does_not_write_before_login_prompt(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.side_effect = [
             AUTH_LOGIN_MSG,
@@ -212,9 +208,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_login_prompt_must_be_present(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.return_value = "unexpected prompt"
 
@@ -226,9 +222,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_password_prompt_must_be_present(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.side_effect = [
             AUTH_LOGIN_MSG,
@@ -236,8 +232,8 @@ class TestAuthenticatedSession:
         ]
 
         with pytest.raises(
-            Exception,
-            match="Password prompt not received",
+                Exception,
+                match="Password prompt not received",
         ):
             await session.authenticate()
 
@@ -248,9 +244,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_welcome_message_must_be_present(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.side_effect = [
             AUTH_LOGIN_MSG,
@@ -259,8 +255,8 @@ class TestAuthenticatedSession:
         ]
 
         with pytest.raises(
-            Exception,
-            match="Waiting credentials",
+                Exception,
+                match="Waiting credentials",
         ):
             await session.authenticate()
 
@@ -272,9 +268,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_failed_authentication_does_not_set_connected(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.side_effect = [
             AUTH_LOGIN_MSG,
@@ -289,9 +285,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_missing_login_prompt_does_not_set_connected(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.return_value = "something else"
 
@@ -302,9 +298,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_username_is_written_with_newline(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.side_effect = [
             AUTH_LOGIN_MSG,
@@ -318,9 +314,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_password_is_written_with_newline(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.side_effect = [
             AUTH_LOGIN_MSG,
@@ -334,9 +330,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_authentication_sequence_is_exactly_correct(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.side_effect = [
             AUTH_LOGIN_MSG,
@@ -356,9 +352,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_login_message_can_be_embedded_in_prompt(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.side_effect = [
             f"banner\r\n{AUTH_LOGIN_MSG}\r\n",
@@ -372,9 +368,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_password_prompt_can_be_embedded_in_response(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.side_effect = [
             AUTH_LOGIN_MSG,
@@ -388,9 +384,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_welcome_message_can_be_embedded_in_response(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.read.side_effect = [
             AUTH_LOGIN_MSG,
@@ -404,9 +400,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_transport_connect_failure_does_not_authenticate(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         session.authenticate = AsyncMock()
         transport.connect.side_effect = RuntimeError("connection failed")
@@ -418,9 +414,9 @@ class TestAuthenticatedSession:
 
     @pytest.mark.asyncio
     async def test_transport_disconnect_failure_is_propagated(
-        self,
-        session,
-        transport,
+            self,
+            session,
+            transport,
     ):
         transport.disconnect.side_effect = RuntimeError(
             "disconnect failed"

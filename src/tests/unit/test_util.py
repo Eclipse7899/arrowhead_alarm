@@ -134,4 +134,3 @@ async def test_split_complete_lines_empty_string():
     data = ""
     lines = split_delimited(data, delimiter="\n")
     assert lines == []
-

@@ -1,6 +1,6 @@
 """Factory functions for creating an instance of the client."""
-from ..util import LoginCredentials
 from .mode_2_client import Mode2Client
+from ..util import LoginCredentials
 
 
 def create_mode_2_client(
