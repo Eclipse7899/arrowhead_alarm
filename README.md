@@ -21,7 +21,7 @@ pip install arrowhead-alarm
 ## Usage Instructions
 
 ```python
-from arrowhead_alarm import create_eci_tcp_client, ArmingMode
+from src.arrowhead_alarm import create_eci_tcp_client, ArmingMode
 
 
 async def main():

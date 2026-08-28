@@ -2,13 +2,13 @@
 
 import pytest
 
-from arrowhead_alarm.const import (
+from .const import (
     AUTH_LOGIN_MSG,
     AUTH_PASSWORD_PROMPT,
     AUTH_WELCOME_MSG,
 )
-from arrowhead_alarm.transport.authenticated_session import AuthenticatedSession, SessionState
-from arrowhead_alarm.transport.tcp import TcpDisconnected
+from transport.authenticated_session import AuthenticatedSession, SessionState
+from transport.tcp import TcpDisconnected
 
 
 @pytest.fixture

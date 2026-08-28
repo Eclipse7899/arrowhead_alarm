@@ -1,10 +1,14 @@
 import logging
 from abc import ABC
 
-from arrowhead_alarm import PanelVersion
-from arrowhead_alarm.protocol import ProtocolMode, version_command, set_output_command, output_state_command, \
-    bypass_zone_command, unbypass_zone_command
-from arrowhead_alarm.transport.command_client import CommandClient
+from ..util import LoginCredentials
+from ..protocol.commands import version_command, set_output_command, bypass_zone_command, \
+    unbypass_zone_command, \
+    output_state_command
+from ..protocol.models import ProtocolMode, PanelVersion
+from ..transport.authenticated_session import AuthenticatedSession
+from ..transport.command_client import CommandClient
+from ..transport.tcp import TcpTransport
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,8 +18,9 @@ class ProtocolClient(ABC):
 
     mode: ProtocolMode
 
-    def __init__(self, client: CommandClient) -> None:
-        self._client = client
+    def __init__(self, host: str, port: int, credentials: LoginCredentials | None) -> None:
+        session = AuthenticatedSession(TcpTransport(host, port), credentials)
+        self._client = CommandClient(session)
 
     async def query_version(self) -> PanelVersion:
         resp = await self._client.request(version_command())

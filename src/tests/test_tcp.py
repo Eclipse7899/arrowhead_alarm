@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from arrowhead_alarm.transport.tcp import TcpTransport, TcpDisconnected, TcpConnected
+from transport.tcp import TcpTransport, TcpDisconnected, TcpConnected
 
 
 @pytest.fixture

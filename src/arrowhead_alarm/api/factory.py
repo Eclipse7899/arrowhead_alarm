@@ -1,10 +1,11 @@
 """Factory functions for creating an instance of the client."""
-from arrowhead_alarm.types import LoginCredentials
+from ..util import LoginCredentials
+from .mode_2_client import Mode2Client
 
 
 def create_mode_2_client(
         host: str, port: int, username: str | None = None, password: str | None = None
-) -> EciClient:
+) -> Mode2Client:
     """Create an EciClient instance.
 
     Args:
@@ -21,4 +22,4 @@ def create_mode_2_client(
         creds = LoginCredentials(username, password)
     else:
         creds = None
-    return Mode2Client()
+    return Mode2Client(host, port, creds)

@@ -4,8 +4,9 @@ import asyncio
 
 import pytest
 
-from arrowhead_alarm.types import ToggleEvent, Success, Failure
+from arrowhead_alarm.protocol.types import Success, Failure
 from arrowhead_alarm.protocol.util import parse_panel_version_string, split_delimited
+from arrowhead_alarm.util import ToggleEvent
 
 
 def test_version_parsing():

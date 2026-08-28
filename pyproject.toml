@@ -32,9 +32,6 @@ keywords = [
     "iot",
     "home-automation"
 ]
-dependencies = [
-    "pyrefly>=0.60.0",
-]
 
 [project.urls]
 Repository = "https://github.com/jonOriginal/arrowhead_alarm"
@@ -42,14 +39,17 @@ Issues = "https://github.com/jonOriginal/arrowhead_alarm/issues"
 
 [dependency-groups]
 dev = [
-    "ty>=0.0.65",
-    "ruff>=0.16.0",
+    "ty>=0.0.75",
+    "ruff>=0.16.5",
     "pytest-timeout>=2.3.0",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
     "pytest-mock>=3.15.1",
 ]
+
+[tool.ty.environment]
+root = ["./src"]
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
@@ -89,6 +89,9 @@ line-length = 88
 indent-width = 4
 
 target-version = "py314"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/arrowhead_alarm"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "D", "N", "I", "ANN", "C90"]

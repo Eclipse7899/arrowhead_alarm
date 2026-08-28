@@ -1,14 +1,10 @@
+from ..util import LoginCredentials
 import logging
 
-from arrowhead_alarm.api.protocol_client import ProtocolClient
-from arrowhead_alarm.protocol import (
-    ArmingMode,
-    ProtocolMode,
-    arm_button_command,
-    arm_no_pin_command,
-    arm_user_command,
-    disarm_user_command,
-)
+from .protocol_client import ProtocolClient
+from ..protocol.commands import arm_button_command, disarm_user_command, arm_no_pin_command, \
+    arm_user_command
+from ..protocol.models import ProtocolMode, ArmingMode
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,6 +12,9 @@ _LOGGER = logging.getLogger(__name__)
 class Mode1Client(ProtocolClient):
     mode = ProtocolMode.MODE_1
     delimiter = "\n\r"
+
+    def __init__(self, host: str, port: int, credentials: LoginCredentials | None) -> None:
+        super().__init__(host, port, credentials)
 
     async def arm_button(self, arm_mode: ArmingMode) -> None:
         _LOGGER.info("Arming in %s mode without user code", arm_mode)

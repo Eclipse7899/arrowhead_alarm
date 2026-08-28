@@ -5,14 +5,14 @@ import sys
 from dataclasses import dataclass
 from typing import TypeVar
 
-from arrowhead_alarm.types import Publisher
+from ..util import Publisher
 
 if sys.version_info >= (3, 11):
     pass
 else:
     pass
 
-from arrowhead_alarm.const import DEF_ENCODING, DEF_READ_LENGTH, DEF_LINE_DELIMITER
+from ..const import DEF_ENCODING, DEF_READ_LENGTH, DEF_LINE_DELIMITER
 
 _LOGGER = logging.getLogger(__name__)
 

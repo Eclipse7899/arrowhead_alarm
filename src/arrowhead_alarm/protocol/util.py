@@ -199,7 +199,7 @@ STATUS_RE: Final = re.compile(
     r"(?:[-\s]"
     r"(?:"
     r"(?P<timestamp>\d+\.\d+)"
-    r"|_U(?P<user_number>\d+)"
+    r"|U(?P<user_number>\d+)"
     r")"
     r")?"
     r"(?:\s(?P<extender_status>[A-Z]{1,2})(?P<extender_number>\d+))?"

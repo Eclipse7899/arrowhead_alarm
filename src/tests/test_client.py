@@ -7,7 +7,7 @@ from typing import Awaitable, Callable
 
 import pytest
 
-from arrowhead_alarm import VersionInfo, create_eci_tcp_client
+from arrowhead_alarm import VersionInfo, create_mode_2_client
 
 
 def no_login_handler(reader: StreamReader, writer: StreamWriter) -> Task[None]:
@@ -38,7 +38,7 @@ async def open_mock(handler: Callable[[StreamReader, StreamWriter], Awaitable[No
 async def test_client_initialization() -> None:
 
     host, port = await open_mock(no_login_handler)
-    client = create_eci_tcp_client(host, port)
+    client = create_mode_2_client(host, port)
     await client.connect()
     assert client.connected
     panel_version = await client.query_panel_version()

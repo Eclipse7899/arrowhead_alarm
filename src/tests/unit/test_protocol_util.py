@@ -1,7 +1,7 @@
 """Tests for the protocol utility functions."""
 
 # ruff: noqa
-from arrowhead_alarm.types import Failure, Success
+from arrowhead_alarm.protocol.types import Failure, Success
 from arrowhead_alarm.protocol.models import ErrorResponse, OkResponse
 from arrowhead_alarm.protocol.util import (
     convert_to_command_error,

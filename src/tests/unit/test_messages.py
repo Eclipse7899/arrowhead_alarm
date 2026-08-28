@@ -3,9 +3,9 @@
 
 import pytest
 
+from arrowhead_alarm.protocol.types import Success
 from arrowhead_alarm.protocol.models import StatusFlags
 from arrowhead_alarm.protocol.util import parse_status_response
-from arrowhead_alarm.types import Success
 
 
 @pytest.mark.parametrize(

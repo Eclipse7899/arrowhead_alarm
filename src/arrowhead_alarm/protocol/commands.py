@@ -1,10 +1,9 @@
 """Commands for interacting with the Arrowhead alarm panel."""
 from typing import TypeVar, Callable
 
-from arrowhead_alarm.protocol import ProtocolError
 from .const import CMD_DISARM, CMD_MODE, CMD_OUTPUT, CMD_ARM_AWAY, CMD_ARM_STAY, \
     CMD_BYPASS, CMD_UNBYPASS, CMD_OUTPUT_ON, CMD_OUTPUT_OFF, CMD_VERSION, CMD_ARM_AREA_AWAY, CMD_ARM_AREA_STAY
-from .exceptions import ProtocolErrorCode
+from .exceptions import ProtocolErrorCode, ProtocolError
 from .models import (
     PanelVersion,
     ProtocolMode, ArmingMode, CommandPayload,
