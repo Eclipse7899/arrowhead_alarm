@@ -34,8 +34,8 @@ keywords = [
 ]
 
 [project.urls]
-Repository = "https://github.com/jonOriginal/arrowhead_alarm"
-Issues = "https://github.com/jonOriginal/arrowhead_alarm/issues"
+Repository = "https://github.com/Eclipse7899/arrowhead_alarm"
+Issues = "https://github.com/Eclipse7899/arrowhead_alarm/issues"
 
 [dependency-groups]
 dev = [

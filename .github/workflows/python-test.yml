@@ -32,5 +32,11 @@ jobs:
       - name: Run Ty
         run: uvx ty check --output-format=github src
 
-      - name: Run tests
-        run: uvx uv run pytest src/tests
+      - name: Coverage
+        run: uv run pytest --cov=src/arrowhead_alarm --cov-report=xml --cov-report=term-missing src/tests
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
