@@ -17,9 +17,7 @@ class SessionState(Enum):
 class AuthenticatedSession:
     """Manages an authenticated TCP session with an Arrowhead alarm panel."""
 
-    def __init__(
-        self, transport: TcpTransport, credentials: LoginCredentials | None
-    ) -> None:
+    def __init__(self, transport: TcpTransport, credentials: LoginCredentials | None) -> None:
         """Initialize the authenticated session.
 
         Args:

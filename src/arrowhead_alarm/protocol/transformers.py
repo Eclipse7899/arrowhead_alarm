@@ -1,4 +1,5 @@
 """Protocol-specific _collector helpers for Arrowhead alarm commands."""
+
 from typing import Callable
 
 from .exceptions import (
@@ -28,7 +29,7 @@ from .util import (
 
 
 def get_cmd_keyword_transformer(
-        keyword: str
+    keyword: str,
 ) -> ResultTransformer[Response, Response, ProtocolErrorCode]:
     """Create an _collector that checks a Response keyword."""
 
@@ -46,7 +47,7 @@ def get_cmd_keyword_transformer(
 
 
 def cmd_result_transformer(
-        resp: Response,
+    resp: Response,
 ) -> Result[str, ProtocolErrorCode]:
     """Transform a command response into a Result with the appropriate error handling."""
     match resp:
@@ -58,14 +59,12 @@ def cmd_result_transformer(
 
 def create_version_transformer(data: str) -> Result[PanelVersion, ProtocolErrorCode]:
     """Create a transformer that parses a version response into a PanelVersion object."""
-    new = data.strip().strip("\"")
-    return parse_panel_version_string(new).map_error(
-        lambda _: ProtocolErrorCode.INVALID_RESPONSE
-    )
+    new = data.strip().strip('"')
+    return parse_panel_version_string(new).map_error(lambda _: ProtocolErrorCode.INVALID_RESPONSE)
 
 
 def get_line_join_transformer(
-        delimiter: str,
+    delimiter: str,
 ) -> Transformer[list[str], str]:
     """Return a transformer that joins a list of _lines into a single string using the delimiter."""
 
@@ -76,7 +75,7 @@ def get_line_join_transformer(
 
 
 def mode_response_transformer(
-        mode_int: int,
+    mode_int: int,
 ) -> Result[ProtocolMode, ProtocolErrorCode]:
     """Parse a mode response and return the value."""
     try:
@@ -87,7 +86,7 @@ def mode_response_transformer(
 
 
 def int_response_transformer(
-        data: str,
+    data: str,
 ) -> Result[int, ProtocolErrorCode]:
     """Parse an integer response and return the value."""
     try:
@@ -110,11 +109,12 @@ def boolean_response_transformer(
         return Failure(ProtocolErrorCode.INVALID_RESPONSE)
 
 
-def get_int_prefix_transformer(
-        expected_int: int
-) -> ResultTransformer[str, str, ProtocolErrorCode]:
+def get_int_prefix_transformer(expected_int: int) -> ResultTransformer[str, str, ProtocolErrorCode]:
     """Return a transformer that checks for an expected integer followed by a string."""
-    def transformer(data: str,) -> Result[str, ProtocolErrorCode]:
+
+    def transformer(
+        data: str,
+    ) -> Result[str, ProtocolErrorCode]:
         try:
             int_data, other_data = data.split(" ", 1)
             if int(int_data) != expected_int:
@@ -122,15 +122,17 @@ def get_int_prefix_transformer(
             return Success(other_data)
         except ValueError:
             return Failure(ProtocolErrorCode.INVALID_RESPONSE)
+
     return transformer
 
+
 def panel_operation_transformer(
-        data: str,
+    data: str,
 ) -> Result[Transformer[PanelState, PanelState], ProtocolErrorCode]:
     """Parse a panel operation response and return a callable that modifies the PanelState."""
 
     def status_op_wrapper(
-            code: StatusResponse
+        code: StatusResponse,
     ) -> Result[Callable[[PanelState], PanelState], ValueError]:
         try:
             return Success(get_status_operation(code))

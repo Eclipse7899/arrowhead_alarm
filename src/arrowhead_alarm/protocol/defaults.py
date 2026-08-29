@@ -1,4 +1,5 @@
 """Default data structures and constants for Arrowhead alarm panels."""
+
 from typing import Dict
 
 from .models import AlarmState, Area, Expander, Output, PanelState, VersionInfo, Zone
@@ -77,10 +78,7 @@ def get_default_outputs() -> Dict[int, Output]:
     Returns:
         A dictionary mapping output numbers to default Output objects.
     """
-    return {
-        i: Output(output_number=i, on=False)
-        for i in range(1, DEFAULT_MAX_OUTPUTS + 1)
-    }
+    return {i: Output(output_number=i, on=False) for i in range(1, DEFAULT_MAX_OUTPUTS + 1)}
 
 
 def get_default_state() -> PanelState:

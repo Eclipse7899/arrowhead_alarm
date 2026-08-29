@@ -1,4 +1,5 @@
 """Base protocol client module for Arrowhead alarm systems."""
+
 import logging
 from abc import ABC
 from dataclasses import replace
@@ -22,14 +23,13 @@ from ..util import LoginCredentials, Publisher
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class ProtocolClient(ABC):
     """The base client for a specific ECI protocol mode."""
 
     mode: ProtocolMode
 
-    def __init__(
-        self, host: str, port: int, credentials: LoginCredentials | None
-    ) -> None:
+    def __init__(self, host: str, port: int, credentials: LoginCredentials | None) -> None:
         """Initialize the protocol client.
 
         Args:
@@ -112,13 +112,12 @@ class ProtocolClient(ABC):
         if result.is_ok:
             _LOGGER.info("Output %d turned on", output_number)
             self._update_state(
-                lambda state:
-                    replace(
-                        state,
-                        outputs={
-                            **state.outputs,
-                            output_number: replace(state.outputs[output_number], on=True)
-                        }
+                lambda state: replace(
+                    state,
+                    outputs={
+                        **state.outputs,
+                        output_number: replace(state.outputs[output_number], on=True),
+                    },
                 )
             )
         else:
@@ -145,9 +144,7 @@ class ProtocolClient(ABC):
             _LOGGER.info("Output %d turned off", output_number)
             self._state.outputs[output_number].on = False
         else:
-            _LOGGER.error(
-                "Error turning off output %d: %s", output_number, result.error
-            )
+            _LOGGER.error("Error turning off output %d: %s", output_number, result.error)
             raise result.error
 
     async def query_output(self, output_number: int) -> bool:

@@ -13,57 +13,79 @@ from .models import (
     StatusResponse,
 )
 
-EXPANDER_CODE_DISPATCHER: Final[
-    dict[tuple[str, str], Callable[[int, PanelState], PanelState]]
-] = {
-    ("BF", "ZX"): lambda expander_number, panel:
-        panel.set_zone_expander_battery_fault(expander_number, True),
-    ("BF", "OX"): lambda expander_number, panel:
-        panel.set_output_expander_battery_fault(expander_number, True),
-    ("BF", "PX"): lambda expander_number, panel:
-        panel.set_prox_expander_battery_fault(expander_number, True),
-    ("BR", "ZX"): lambda expander_number, panel:
-        panel.set_zone_expander_battery_fault(expander_number, False),
-    ("BR", "OX"): lambda expander_number, panel:
-        panel.set_output_expander_battery_fault(expander_number, False),
-    ("BR", "PX"): lambda expander_number, panel:
-        panel.set_prox_expander_battery_fault(expander_number, False),
-    ("MR", "PX"): lambda expander_number, panel:
-        panel.set_prox_expander_mains_fault(expander_number, False),
-    ("MR", "ZX"): lambda expander_number, panel:
-        panel.set_zone_expander_mains_fault(expander_number, False),
-    ("MR", "OX"): lambda expander_number, panel:
-        panel.set_output_expander_mains_fault(expander_number, False),
-    ("MF", "PX"): lambda expander_number, panel:
-        panel.set_prox_expander_mains_fault(expander_number, True),
-    ("MF", "ZX"): lambda expander_number, panel:
-        panel.set_zone_expander_mains_fault(expander_number, True),
-    ("MF", "OX"): lambda expander_number, panel:
-        panel.set_output_expander_mains_fault(expander_number, True),
-    ("FR", "OX"): lambda expander_number, panel:
-        panel.set_output_expander_fuse_fault(expander_number, False),
-    ("FR", "ZX"): lambda expander_number, panel:
-        panel.set_zone_expander_fuse_fault(expander_number, False),
-    ("FR", "PX"): lambda expander_number, panel:
-        panel.set_prox_expander_fuse_fault(expander_number, False),
-    ("FF", "OX"): lambda expander_number, panel:
-        panel.set_output_expander_fuse_fault(expander_number, True),
-    ("FF", "ZX"): lambda expander_number, panel:
-        panel.set_zone_expander_fuse_fault(expander_number, True),
-    ("FF", "PX"): lambda expander_number, panel:
-        panel.set_prox_expander_fuse_fault(expander_number, True),
-    ("TR", "PX"): lambda expander_number, panel:
-        panel.set_prox_expander_tamper_alarm_triggered(expander_number, False),
-    ("TR", "ZX"): lambda expander_number, panel:
-        panel.set_zone_expander_tamper_alarm_triggered(expander_number, False),
-    ("TR", "OX"): lambda expander_number, panel:
-        panel.set_output_expander_tamper_alarm_triggered(expander_number, False),
-    ("TA", "PX"): lambda expander_number, panel:
-        panel.set_prox_expander_tamper_alarm_triggered(expander_number, True),
-    ("TA", "ZX"): lambda expander_number, panel:
-        panel.set_zone_expander_tamper_alarm_triggered(expander_number, True),
-    ("TA", "OX"): lambda expander_number, panel:
-        panel.set_output_expander_tamper_alarm_triggered(expander_number, True),
+EXPANDER_CODE_DISPATCHER: Final[dict[tuple[str, str], Callable[[int, PanelState], PanelState]]] = {
+    ("BF", "ZX"): lambda expander_number, panel: panel.set_zone_expander_battery_fault(
+        expander_number, True
+    ),
+    ("BF", "OX"): lambda expander_number, panel: panel.set_output_expander_battery_fault(
+        expander_number, True
+    ),
+    ("BF", "PX"): lambda expander_number, panel: panel.set_prox_expander_battery_fault(
+        expander_number, True
+    ),
+    ("BR", "ZX"): lambda expander_number, panel: panel.set_zone_expander_battery_fault(
+        expander_number, False
+    ),
+    ("BR", "OX"): lambda expander_number, panel: panel.set_output_expander_battery_fault(
+        expander_number, False
+    ),
+    ("BR", "PX"): lambda expander_number, panel: panel.set_prox_expander_battery_fault(
+        expander_number, False
+    ),
+    ("MR", "PX"): lambda expander_number, panel: panel.set_prox_expander_mains_fault(
+        expander_number, False
+    ),
+    ("MR", "ZX"): lambda expander_number, panel: panel.set_zone_expander_mains_fault(
+        expander_number, False
+    ),
+    ("MR", "OX"): lambda expander_number, panel: panel.set_output_expander_mains_fault(
+        expander_number, False
+    ),
+    ("MF", "PX"): lambda expander_number, panel: panel.set_prox_expander_mains_fault(
+        expander_number, True
+    ),
+    ("MF", "ZX"): lambda expander_number, panel: panel.set_zone_expander_mains_fault(
+        expander_number, True
+    ),
+    ("MF", "OX"): lambda expander_number, panel: panel.set_output_expander_mains_fault(
+        expander_number, True
+    ),
+    ("FR", "OX"): lambda expander_number, panel: panel.set_output_expander_fuse_fault(
+        expander_number, False
+    ),
+    ("FR", "ZX"): lambda expander_number, panel: panel.set_zone_expander_fuse_fault(
+        expander_number, False
+    ),
+    ("FR", "PX"): lambda expander_number, panel: panel.set_prox_expander_fuse_fault(
+        expander_number, False
+    ),
+    ("FF", "OX"): lambda expander_number, panel: panel.set_output_expander_fuse_fault(
+        expander_number, True
+    ),
+    ("FF", "ZX"): lambda expander_number, panel: panel.set_zone_expander_fuse_fault(
+        expander_number, True
+    ),
+    ("FF", "PX"): lambda expander_number, panel: panel.set_prox_expander_fuse_fault(
+        expander_number, True
+    ),
+    ("TR", "PX"): lambda expander_number, panel: panel.set_prox_expander_tamper_alarm_triggered(
+        expander_number, False
+    ),
+    ("TR", "ZX"): lambda expander_number, panel: panel.set_zone_expander_tamper_alarm_triggered(
+        expander_number, False
+    ),
+    ("TR", "OX"): lambda expander_number, panel: panel.set_output_expander_tamper_alarm_triggered(
+        expander_number, False
+    ),
+    ("TA", "PX"): lambda expander_number, panel: panel.set_prox_expander_tamper_alarm_triggered(
+        expander_number, True
+    ),
+    ("TA", "ZX"): lambda expander_number, panel: panel.set_zone_expander_tamper_alarm_triggered(
+        expander_number, True
+    ),
+    ("TA", "OX"): lambda expander_number, panel: panel.set_output_expander_tamper_alarm_triggered(
+        expander_number, True
+    ),
 }
 
 
@@ -95,55 +117,30 @@ def get_expander_status_operation(
     return panel_state_operation
 
 
-NUMBERED_STATUS_DISPATCHER: Final[
-    dict[str, Callable[[int, PanelState], PanelState]]
-] = {
-    "A": lambda area_number, panel:
-        panel.set_area_state(area_number, AlarmState.ARMED_AWAY),
-    "D": lambda area_number, panel:
-        panel.set_area_state(area_number, AlarmState.DISARMED),
-    "AA": lambda area_number, panel:
-        panel.set_area_state(area_number, AlarmState.ALARM_TRIGGERED),
-    "AR": lambda area_number, panel:
-        panel.set_area_state(area_number, AlarmState.DISARMED),
-    "S": lambda area_number, panel:
-        panel.set_area_state(area_number, AlarmState.ARMED_STAY),
-    "NR": lambda area_number, panel:
-        panel.set_area_ready(area_number, False),
-    "RO": lambda area_number, panel:
-        panel.set_area_ready(area_number, True),
-    "ZA": lambda zone_number, panel:
-        panel.set_zone_alarm(zone_number, True),
-    "ZBL": lambda zone_number, panel:
-        panel.set_zone_radio_battery_low(zone_number, True),
-    "ZBR": lambda zone_number, panel:
-        panel.set_zone_radio_battery_low(zone_number, False),
-    "ZBY": lambda zone_number, panel:
-        panel.set_zone_bypassed(zone_number, True),
-    "ZBYR": lambda zone_number, panel:
-        panel.set_zone_bypassed(zone_number, False),
-    "ZC": lambda zone_number, panel:
-        panel.set_zone_closed(zone_number, True),
-    "ZIA": lambda zone_number, panel:
-        panel.set_zone_sensor_watch_alarm(zone_number, True),
-    "ZIR": lambda zone_number, panel:
-        panel.set_zone_sensor_watch_alarm(zone_number, False),
-    "ZO": lambda zone_number, panel:
-        panel.set_zone_closed(zone_number, False),
-    "ZR": lambda zone_number, panel:
-        panel.set_zone_alarm(zone_number, False),
-    "ZT": lambda zone_number, panel:
-        panel.set_zone_trouble_alarm(zone_number, True),
-    "ZTR": lambda zone_number, panel:
-        panel.set_zone_trouble_alarm(zone_number, False),
-    "ZSA": lambda zone_number, panel:
-        panel.set_zone_supervise_alarm(zone_number, True),
-    "ZSR": lambda zone_number, panel:
-        panel.set_zone_supervise_alarm(zone_number, False),
-    "OO": lambda output_number, panel:
-        panel.set_output_on(output_number, True),
-    "OR": lambda output_number, panel:
-        panel.set_output_on(output_number, False),
+NUMBERED_STATUS_DISPATCHER: Final[dict[str, Callable[[int, PanelState], PanelState]]] = {
+    "A": lambda area_number, panel: panel.set_area_state(area_number, AlarmState.ARMED_AWAY),
+    "D": lambda area_number, panel: panel.set_area_state(area_number, AlarmState.DISARMED),
+    "AA": lambda area_number, panel: panel.set_area_state(area_number, AlarmState.ALARM_TRIGGERED),
+    "AR": lambda area_number, panel: panel.set_area_state(area_number, AlarmState.DISARMED),
+    "S": lambda area_number, panel: panel.set_area_state(area_number, AlarmState.ARMED_STAY),
+    "NR": lambda area_number, panel: panel.set_area_ready(area_number, False),
+    "RO": lambda area_number, panel: panel.set_area_ready(area_number, True),
+    "ZA": lambda zone_number, panel: panel.set_zone_alarm(zone_number, True),
+    "ZBL": lambda zone_number, panel: panel.set_zone_radio_battery_low(zone_number, True),
+    "ZBR": lambda zone_number, panel: panel.set_zone_radio_battery_low(zone_number, False),
+    "ZBY": lambda zone_number, panel: panel.set_zone_bypassed(zone_number, True),
+    "ZBYR": lambda zone_number, panel: panel.set_zone_bypassed(zone_number, False),
+    "ZC": lambda zone_number, panel: panel.set_zone_closed(zone_number, True),
+    "ZIA": lambda zone_number, panel: panel.set_zone_sensor_watch_alarm(zone_number, True),
+    "ZIR": lambda zone_number, panel: panel.set_zone_sensor_watch_alarm(zone_number, False),
+    "ZO": lambda zone_number, panel: panel.set_zone_closed(zone_number, False),
+    "ZR": lambda zone_number, panel: panel.set_zone_alarm(zone_number, False),
+    "ZT": lambda zone_number, panel: panel.set_zone_trouble_alarm(zone_number, True),
+    "ZTR": lambda zone_number, panel: panel.set_zone_trouble_alarm(zone_number, False),
+    "ZSA": lambda zone_number, panel: panel.set_zone_supervise_alarm(zone_number, True),
+    "ZSR": lambda zone_number, panel: panel.set_zone_supervise_alarm(zone_number, False),
+    "OO": lambda output_number, panel: panel.set_output_on(output_number, True),
+    "OR": lambda output_number, panel: panel.set_output_on(output_number, False),
 }
 
 
@@ -159,13 +156,9 @@ def get_numbered_status_operation(
 
     """
     if numbered_status.code not in NUMBERED_STATUS_DISPATCHER:
-        raise ValueError(
-            f"Unsupported numbered status_response: {numbered_status.code}"
-        )
+        raise ValueError(f"Unsupported numbered status_response: {numbered_status.code}")
     if numbered_status.number is None:
-        raise ValueError(
-            "Area number is required for numbered status_response operations"
-        )
+        raise ValueError("Area number is required for numbered status_response operations")
 
     operation = NUMBERED_STATUS_DISPATCHER[numbered_status.code]
     number = numbered_status.number
@@ -176,9 +169,7 @@ def get_numbered_status_operation(
     return panel_state_operation
 
 
-USER_STATUS_DISPATCHER: Final[
-    dict[str, Callable[[int, PanelState], PanelState]]
-] = {
+USER_STATUS_DISPATCHER: Final[dict[str, Callable[[int, PanelState], PanelState]]] = {
     "A": lambda area_number, panel: panel.set_area_state(area_number, AlarmState.ARMED_AWAY),
     "D": lambda area_number, panel: panel.set_area_state(area_number, AlarmState.DISARMED),
     "S": lambda area_number, panel: panel.set_area_state(area_number, AlarmState.ARMED_STAY),
@@ -212,9 +203,7 @@ def get_user_status_operation(
     return panel_state_operation
 
 
-TIMESTAMPED_STATUS_DISPATCHER: Final[
-    dict[str, Callable[[int, float, PanelState], PanelState]]
-] = {
+TIMESTAMPED_STATUS_DISPATCHER: Final[dict[str, Callable[[int, float, PanelState], PanelState]]] = {
     "EDA": lambda area, timestamp, panel: panel.set_area_state(area, AlarmState.ARMING_AWAY),
     "EDS": lambda area, timestamp, panel: panel.set_area_state(area, AlarmState.ARMING_STAY),
     "ZEDS": lambda zone, timestamp, panel: panel,
@@ -233,17 +222,11 @@ def get_timestamped_status_operation(
 
     """
     if status_response.code not in TIMESTAMPED_STATUS_DISPATCHER:
-        raise ValueError(
-            f"Unsupported timestamped status_response: {status_response.code}"
-        )
+        raise ValueError(f"Unsupported timestamped status_response: {status_response.code}")
     if status_response.number is None:
-        raise ValueError(
-            "Area number is required for timestamped status_response operations"
-        )
+        raise ValueError("Area number is required for timestamped status_response operations")
     if status_response.timestamp is None:
-        raise ValueError(
-            "Timestamp is required for timestamped status_response operations"
-        )
+        raise ValueError("Timestamp is required for timestamped status_response operations")
 
     operation = TIMESTAMPED_STATUS_DISPATCHER[status_response.code]
     number = status_response.number
@@ -255,9 +238,7 @@ def get_timestamped_status_operation(
     return panel_state_operation
 
 
-STATUS_CODE_DISPATCHER: Final[
-    dict[str, Callable[[PanelState], PanelState]]
-] = {
+STATUS_CODE_DISPATCHER: Final[dict[str, Callable[[PanelState], PanelState]]] = {
     "RO": lambda panel: panel.set_ready_to_arm(True),
     "NR": lambda panel: panel.set_ready_to_arm(False),
     "BF": lambda panel: panel.set_battery_fault(True),

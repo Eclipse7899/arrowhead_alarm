@@ -22,9 +22,7 @@ class Mode4Client(ProtocolClient):
     mode = ProtocolMode.MODE_4
     delimiter = "\n\r"
 
-    def __init__(
-        self, host: str, port: int, credentials: LoginCredentials | None
-    ) -> None:
+    def __init__(self, host: str, port: int, credentials: LoginCredentials | None) -> None:
         """Initialize the Mode 4 client.
 
         Args:

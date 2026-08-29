@@ -165,9 +165,7 @@ class ResultPipeline(Generic[_T, _U, _E]):
 
     _transformer: ResultTransformer[_T, _U, _E]
 
-    def bind(
-        self, other: ResultTransformer[_U, _V, _E]
-    ) -> "ResultPipeline[_T, _V, _E]":
+    def bind(self, other: ResultTransformer[_U, _V, _E]) -> "ResultPipeline[_T, _V, _E]":
         """Bind the pipeline to another ResultTransformer.
 
         Args:
@@ -198,9 +196,7 @@ class CollectionResultBase(ABC, Generic[_T]):
     is_done: bool
 
     @abstractmethod
-    def bind(
-        self, func: Transformer[_T, "CollectionResult[_U]"]
-    ) -> "CollectionResult[_U]":
+    def bind(self, func: Transformer[_T, "CollectionResult[_U]"]) -> "CollectionResult[_U]":
         """Bind the result to a function that returns another result."""
         ...
 
@@ -218,9 +214,7 @@ class Done(CollectionResultBase[_T]):
     is_done: Literal[True] = True
 
     @override
-    def bind(
-        self, func: Transformer[_T, "CollectionResult[_U]"]
-    ) -> "CollectionResult[_U]":
+    def bind(self, func: Transformer[_T, "CollectionResult[_U]"]) -> "CollectionResult[_U]":
         return func(self.value)
 
     @override
@@ -235,9 +229,7 @@ class Waiting(CollectionResultBase[_T]):
     is_done: Literal[False] = False
 
     @override
-    def bind(
-        self, func: Transformer[_T, "CollectionResult[_U]"]
-    ) -> "CollectionResult[_U]":
+    def bind(self, func: Transformer[_T, "CollectionResult[_U]"]) -> "CollectionResult[_U]":
         return Waiting()
 
     @override

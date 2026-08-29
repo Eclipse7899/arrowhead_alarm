@@ -1,4 +1,5 @@
 """Types used in the Arrowhead Alarm protocol."""
+
 import sys
 from dataclasses import dataclass, replace
 from enum import Enum, IntFlag, auto
@@ -145,12 +146,14 @@ class CommandPayload:
 @dataclass
 class ErrorResponse:
     """Represents an error response from a cmd."""
+
     error_code: int
 
 
 @dataclass
 class OkResponse:
     """Represents a successful response of type A from a cmd."""
+
     keyword: str
     data: str
 
@@ -533,8 +536,7 @@ class PanelState:
 
         return replace(
             self,
-            zone_expanders=self.zone_expanders
-            | {expander_number: expander},
+            zone_expanders=self.zone_expanders | {expander_number: expander},
         )
 
     def set_zone_expander_mains_fault(
@@ -550,8 +552,7 @@ class PanelState:
 
         return replace(
             self,
-            zone_expanders=self.zone_expanders
-            | {expander_number: expander},
+            zone_expanders=self.zone_expanders | {expander_number: expander},
         )
 
     def set_zone_expander_fuse_fault(
@@ -567,8 +568,7 @@ class PanelState:
 
         return replace(
             self,
-            zone_expanders=self.zone_expanders
-            | {expander_number: expander},
+            zone_expanders=self.zone_expanders | {expander_number: expander},
         )
 
     def set_zone_expander_tamper_alarm_triggered(
@@ -580,14 +580,11 @@ class PanelState:
         if expander_number not in self.zone_expanders:
             return self
 
-        expander = self.zone_expanders[
-            expander_number
-        ].set_tamper_alarm_triggered(value)
+        expander = self.zone_expanders[expander_number].set_tamper_alarm_triggered(value)
 
         return replace(
             self,
-            zone_expanders=self.zone_expanders
-            | {expander_number: expander},
+            zone_expanders=self.zone_expanders | {expander_number: expander},
         )
 
     def set_output_expander_battery_fault(
@@ -603,8 +600,7 @@ class PanelState:
 
         return replace(
             self,
-            output_expanders=self.output_expanders
-            | {expander_number: expander},
+            output_expanders=self.output_expanders | {expander_number: expander},
         )
 
     def set_output_expander_mains_fault(
@@ -620,8 +616,7 @@ class PanelState:
 
         return replace(
             self,
-            output_expanders=self.output_expanders
-            | {expander_number: expander},
+            output_expanders=self.output_expanders | {expander_number: expander},
         )
 
     def set_output_expander_fuse_fault(
@@ -637,8 +632,7 @@ class PanelState:
 
         return replace(
             self,
-            output_expanders=self.output_expanders
-            | {expander_number: expander},
+            output_expanders=self.output_expanders | {expander_number: expander},
         )
 
     def set_output_expander_tamper_alarm_triggered(
@@ -650,14 +644,11 @@ class PanelState:
         if expander_number not in self.output_expanders:
             return self
 
-        expander = self.output_expanders[
-            expander_number
-        ].set_tamper_alarm_triggered(value)
+        expander = self.output_expanders[expander_number].set_tamper_alarm_triggered(value)
 
         return replace(
             self,
-            output_expanders=self.output_expanders
-            | {expander_number: expander},
+            output_expanders=self.output_expanders | {expander_number: expander},
         )
 
     def set_prox_expander_battery_fault(
@@ -673,8 +664,7 @@ class PanelState:
 
         return replace(
             self,
-            prox_expanders=self.prox_expanders
-            | {expander_number: expander},
+            prox_expanders=self.prox_expanders | {expander_number: expander},
         )
 
     def set_prox_expander_mains_fault(
@@ -690,8 +680,7 @@ class PanelState:
 
         return replace(
             self,
-            prox_expanders=self.prox_expanders
-            | {expander_number: expander},
+            prox_expanders=self.prox_expanders | {expander_number: expander},
         )
 
     def set_prox_expander_fuse_fault(
@@ -707,8 +696,7 @@ class PanelState:
 
         return replace(
             self,
-            prox_expanders=self.prox_expanders
-            | {expander_number: expander},
+            prox_expanders=self.prox_expanders | {expander_number: expander},
         )
 
     def set_prox_expander_tamper_alarm_triggered(
@@ -720,14 +708,11 @@ class PanelState:
         if expander_number not in self.prox_expanders:
             return self
 
-        expander = self.prox_expanders[
-            expander_number
-        ].set_tamper_alarm_triggered(value)
+        expander = self.prox_expanders[expander_number].set_tamper_alarm_triggered(value)
 
         return replace(
             self,
-            prox_expanders=self.prox_expanders
-            | {expander_number: expander},
+            prox_expanders=self.prox_expanders | {expander_number: expander},
         )
 
 

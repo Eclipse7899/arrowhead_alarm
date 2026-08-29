@@ -76,8 +76,10 @@ class ToggleEvent:
 @dataclass
 class _Subscription(Generic[_T]):
     """A subscription to a publisher."""
+
     callback: Callable[[_T], None]
     active: bool = field(default=True)
+
 
 class Publisher(Generic[_T]):
     """A _publisher that notifies subscribers of changes."""

@@ -16,9 +16,7 @@ class Mode2Client(ProtocolClient):
     mode = ProtocolMode.MODE_2
     delimiter = "\n\r"
 
-    def __init__(
-        self, host: str, port: int, credentials: LoginCredentials | None
-    ) -> None:
+    def __init__(self, host: str, port: int, credentials: LoginCredentials | None) -> None:
         """Initialize the Mode 2 client.
 
         Args:
