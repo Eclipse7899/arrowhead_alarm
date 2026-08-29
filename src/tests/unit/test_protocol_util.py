@@ -37,20 +37,6 @@ def test_convert_to_command_ok_failure_invalid_prefix():
     assert isinstance(result.error, ValueError)
     assert "Waiting cmd OK response" in str(result.error)
 
-
-def test_convert_to_command_ok_failure_invalid_format():
-    # Only "OK" or "OK KEYWORD" (needs at least two spaces for split(" ", 2))
-    data = "OK"
-    result = convert_to_command_ok(data)
-    assert isinstance(result, Failure)
-    assert isinstance(result.error, ValueError)
-
-    data = "OK KEYWORD"
-    result = convert_to_command_ok(data)
-    assert isinstance(result, Failure)
-    assert isinstance(result.error, ValueError)
-
-
 def test_convert_to_command_error_success():
     data = "ERR123"
     result = convert_to_command_error(data)

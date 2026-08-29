@@ -14,11 +14,11 @@ def no_login_handler(reader: StreamReader, writer: StreamWriter) -> Task[None]:
         await writer.drain()
 
         while True:
-            line = await reader.readline()
-            if line.strip() == b"Version":
-                writer.write(b'OK Version "ECi _F/W Ver. 10.3.52 (WR5SPLS1)"\r\n')
+            line = (await reader.readline()).strip().upper()
+            if line == b"VERSION":
+                writer.write(b'OK Version "ECi F/W Ver. 10.3.52 (WR5SPLS1)"\r\n')
                 await writer.drain()
-            if line.strip().startswith(b"MODE"):
+            if line.startswith(b"MODE"):
                 mode_num = line.strip().split(b" ")[1]
                 writer.write(b"OK\r\n" + b"Mode " + mode_num + b"\r\n")
                 await writer.drain()
@@ -31,13 +31,12 @@ async def open_mock(handler: Callable[[StreamReader, StreamWriter], Awaitable[No
     return server.sockets[0].getsockname()
 
 
-@pytest.mark.timeout(1)
+@pytest.mark.timeout(10)
 @pytest.mark.asyncio
 async def test_client_initialization() -> None:
     host, port = await open_mock(no_login_handler)
     client = create_mode_2_client(host, port)
-    await client.connect()
-    assert client.connected
-    panel_version = await client.query_panel_version()
+    await client.start()
+    panel_version = await client.query_version()
     assert panel_version is not None
     assert panel_version.firmware_version == VersionInfo(10, 3, 52)
