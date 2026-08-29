@@ -1,26 +1,29 @@
 """Base protocol client module for Arrowhead alarm systems."""
-
 import logging
 from abc import ABC
+from dataclasses import replace
+from typing import Callable
 
 from ..protocol.commands import (
     bypass_zone_command,
+    mode_command,
     output_state_command,
     set_output_command,
     unbypass_zone_command,
     version_command,
 )
-from ..protocol.models import PanelVersion, ProtocolMode
+from ..protocol.defaults import get_default_state
+from ..protocol.models import PanelState, PanelVersion, ProtocolMode
+from ..protocol.transformers import panel_operation_transformer
 from ..transport.authenticated_session import AuthenticatedSession
 from ..transport.command_client import CommandClient
 from ..transport.tcp import TcpTransport
-from ..util import LoginCredentials
+from ..util import LoginCredentials, Publisher
 
 _LOGGER = logging.getLogger(__name__)
 
-
 class ProtocolClient(ABC):
-    """Base client for a specific ECI protocol mode."""
+    """The base client for a specific ECI protocol mode."""
 
     mode: ProtocolMode
 
@@ -35,7 +38,46 @@ class ProtocolClient(ABC):
             credentials: Login credentials for authentication, or None.
         """
         session = AuthenticatedSession(TcpTransport(host, port), credentials)
+        self._state: PanelState = get_default_state()
         self._client = CommandClient(session)
+        self.state_publisher: Publisher[PanelState] = Publisher()
+
+    def _update_state(self, mutate_func: Callable[[PanelState], PanelState]) -> None:
+        """Update the internal state of the panel."""
+        new_state = mutate_func(self._state)
+        self._state = new_state
+        self.state_publisher.dispatch(new_state)
+
+    async def start(self) -> None:
+        """Start the protocol client."""
+        await self._client.connect()
+        await self._set_mode()
+        self._client.subscribe(self._handle_event)
+
+    async def stop(self) -> None:
+        """Stop the protocol client."""
+        await self._client.disconnect()
+        self._client.unsubscribe(self._handle_event)
+
+    def _handle_event(self, data: str) -> None:
+        """Handle incoming events from the panel."""
+        _LOGGER.debug("Received event: %s", data)
+
+        result = panel_operation_transformer(data)
+        if result.is_ok:
+            self._update_state(result.value)
+        else:
+            _LOGGER.error("Error processing event: %s", result.error)
+
+    async def _set_mode(self) -> None:
+        """Set the protocol mode."""
+        _LOGGER.info("Setting protocol mode to %s", self.mode)
+        result = await self._client.request(mode_command(self.mode))
+        if result.is_ok:
+            _LOGGER.info("Protocol mode set to %s", self.mode)
+        else:
+            _LOGGER.error("Error setting protocol mode: %s", result.error)
+            raise result.error
 
     async def query_version(self) -> PanelVersion:
         """Query the alarm panel version.
@@ -61,9 +103,24 @@ class ProtocolClient(ABC):
             Exception: If turning on the output fails.
         """
         _LOGGER.info("Turning on output %d", output_number)
+
+        if output_number not in self._state.outputs:
+            _LOGGER.error("Output %d does not exist in the current state", output_number)
+            raise ValueError(f"Output {output_number} does not exist in the current state")
+
         result = await self._client.request(set_output_command(output_number, True))
         if result.is_ok:
             _LOGGER.info("Output %d turned on", output_number)
+            self._update_state(
+                lambda state:
+                    replace(
+                        state,
+                        outputs={
+                            **state.outputs,
+                            output_number: replace(state.outputs[output_number], on=True)
+                        }
+                )
+            )
         else:
             _LOGGER.error("Error turning on output %d: %s", output_number, result.error)
             raise result.error
@@ -75,12 +132,18 @@ class ProtocolClient(ABC):
             output_number: The output number to turn off.
 
         Raises:
-            Exception: If turning off the output fails.
+            Exception: If turning the output off fails.
         """
         _LOGGER.info("Turning off output %d", output_number)
+
+        if output_number not in self._state.outputs:
+            _LOGGER.error("Output %d does not exist in the current state", output_number)
+            raise ValueError(f"Output {output_number} does not exist in the current state")
+
         result = await self._client.request(set_output_command(output_number, False))
         if result.is_ok:
             _LOGGER.info("Output %d turned off", output_number)
+            self._state.outputs[output_number].on = False
         else:
             _LOGGER.error(
                 "Error turning off output %d: %s", output_number, result.error
@@ -100,8 +163,15 @@ class ProtocolClient(ABC):
             Exception: If querying the output fails.
         """
         _LOGGER.info("Querying output %d state", output_number)
+
+        if output_number not in self._state.outputs:
+            _LOGGER.error("Output %d does not exist in the current state", output_number)
+            raise ValueError(f"Output {output_number} does not exist in the current state")
+
         result = await self._client.request(output_state_command(output_number))
         if result.is_ok:
+            _LOGGER.info("Output %d state queried", output_number)
+            self._state.outputs[output_number].on = result.value
             return result.value
         _LOGGER.error("Error querying output %d: %s", output_number, result.error)
         raise result.error
@@ -116,9 +186,15 @@ class ProtocolClient(ABC):
             Exception: If bypassing the zone fails.
         """
         _LOGGER.info("Bypassing zone %d", zone_number)
+
+        if zone_number not in self._state.zones:
+            _LOGGER.error("Zone %d does not exist in the current state", zone_number)
+            raise ValueError(f"Zone {zone_number} does not exist in the current state")
+
         result = await self._client.request(bypass_zone_command(zone_number))
         if result.is_ok:
             _LOGGER.info("Zone %d bypassed", zone_number)
+            self._state.zones[zone_number].bypassed = True
         else:
             _LOGGER.error("Error bypassing zone %d: %s", zone_number, result.error)
             raise result.error
@@ -132,10 +208,15 @@ class ProtocolClient(ABC):
         Raises:
             Exception: If unbypassing the zone fails.
         """
+        if zone_number not in self._state.zones:
+            _LOGGER.error("Zone %d does not exist in the current state", zone_number)
+            raise ValueError(f"Zone {zone_number} does not exist in the current state")
+
         _LOGGER.info("Unbypassing zone %d", zone_number)
         result = await self._client.request(unbypass_zone_command(zone_number))
         if result.is_ok:
             _LOGGER.info("Zone %d unbypassed", zone_number)
+            self._state.zones[zone_number].bypassed = False
         else:
             _LOGGER.error("Error unbypassing zone %d: %s", zone_number, result.error)
             raise result.error

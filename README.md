@@ -21,11 +21,11 @@ pip install arrowhead-alarm
 ## Usage Instructions
 
 ```python
-from src.arrowhead_alarm import create_eci_tcp_client, ArmingMode
+from arrowhead_alarm import create_mode_2_client, ArmingMode
 
 
 async def main():
-    client = create_eci_tcp_client(
+    client = create_mode_2_client(
         host="192.168.0.20",
         port=9000,
         username="admin",

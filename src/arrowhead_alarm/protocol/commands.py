@@ -28,28 +28,39 @@ from .transformers import (
     cmd_result_transformer,
     create_version_transformer,
     get_cmd_keyword_transformer,
+    get_int_prefix_transformer,
     int_response_transformer,
     mode_response_transformer,
 )
 from .types import (
+    CollectionResult,
     Collector,
     CollectorContext,
     CollectorPipeline,
     Command,
+    Done,
     Result,
     ResultPipeline,
     Success,
+    Waiting,
 )
-from .util import convert_to_response, get_protocol_exception
+from .util import convert_to_response, get_protocol_exception, is_command_error, is_command_ok
 
 _T = TypeVar("_T")
 
 
-def _get_cmd_command(
+def _is_command_response(data: str) -> CollectionResult[str]:
+    """Return Done for command response lines (OK/ERR), Waiting for everything else."""
+    if is_command_ok(data) or is_command_error(data):
+        return Done(data)
+    return Waiting()
+
+
+def _get_command_collector(
     request: str, transformer: Callable[[str], Result[_T, ProtocolErrorCode]]
 ) -> Collector[str, Result[_T, ProtocolError]]:
     return (
-        CollectorPipeline.of_string()
+        CollectorPipeline(_is_command_response)
         .map(CollectorContext.of_value)
         .map(lambda context: context.map(transformer))
         .map(
@@ -78,7 +89,7 @@ def _get_int_command(keyword: str, payload: str) -> Command[Result[int, Protocol
         _get_cmd_result_pipeline(keyword).bind(int_response_transformer).unwrap()
     )
 
-    return Command(payload, _get_cmd_command(payload, response_parser))
+    return Command(payload, _get_command_collector(payload, response_parser))
 
 
 def version_command() -> Command[Result[PanelVersion, ProtocolError]]:
@@ -88,13 +99,33 @@ def version_command() -> Command[Result[PanelVersion, ProtocolError]]:
         A command object that resolves to the panel version or a protocol error.
     """
     response_parser = (
-        _get_cmd_result_pipeline(CMD_VERSION).bind(create_version_transformer).unwrap()
+        _get_cmd_result_pipeline(CMD_VERSION)
+        .bind(create_version_transformer)
+        .unwrap()
     )
 
     payload = CMD_VERSION
 
-    return Command(payload, _get_cmd_command(payload, response_parser))
+    return Command(payload, _get_command_collector(payload, response_parser))
 
+
+class ModeResponseCollector:
+    """Collector for mode response lines."""
+    def __init__(self) -> None:
+        """Initialize the ModeResponseCollector."""
+        self._lines: list[str] = []
+
+    def collect(self, line: str) -> CollectionResult[list[str]]:
+        """Collect the mode response lines."""
+        self._lines.append(line)
+
+        if is_command_error(line):
+            return Done(self._lines)
+
+        if len(self._lines) == 2:
+            return Done(self._lines)
+
+        return Waiting()
 
 def mode_command(mode: ProtocolMode) -> Command[Result[ProtocolMode, ProtocolError]]:
     """Create a command to set the protocol mode.
@@ -114,7 +145,14 @@ def mode_command(mode: ProtocolMode) -> Command[Result[ProtocolMode, ProtocolErr
 
     payload = CommandPayload(CMD_MODE, [mode.value]).build()
 
-    return Command(payload, _get_cmd_command(payload, response_parser))
+    collector = (
+        CollectorPipeline(ModeResponseCollector().collect)
+        .map(lambda lines: " ".join(lines))
+        .bind(_get_command_collector(payload, response_parser))
+        .unwrap()
+    )
+
+    return Command(payload, collector)
 
 
 def arm_button_command(mode: ArmingMode) -> Command[Result[None, ProtocolError]]:
@@ -136,7 +174,7 @@ def arm_button_command(mode: ArmingMode) -> Command[Result[None, ProtocolError]]
 
     evaluator = _get_cmd_result_pipeline(keyword).bind(lambda _: Success(None)).unwrap()
 
-    return Command(payload, _get_cmd_command(payload, evaluator))
+    return Command(payload, _get_command_collector(payload, evaluator))
 
 
 def arm_user_command(
@@ -303,7 +341,6 @@ def set_output_command(output: int, on: bool) -> Command[Result[int, ProtocolErr
 
     return _get_int_command(keyword, payload)
 
-
 def output_state_command(output: int) -> Command[Result[bool, ProtocolError]]:
     """Create a command to query the state of an output.
 
@@ -315,7 +352,10 @@ def output_state_command(output: int) -> Command[Result[bool, ProtocolError]]:
     """
     payload = CommandPayload(CMD_OUTPUT, [output]).build()
     evaluator = (
-        _get_cmd_result_pipeline(CMD_OUTPUT).bind(boolean_response_transformer).unwrap()
+        _get_cmd_result_pipeline(CMD_OUTPUT)
+        .bind(get_int_prefix_transformer(output))
+        .bind(boolean_response_transformer)
+        .unwrap()
     )
 
-    return Command(payload, _get_cmd_command(payload, evaluator))
+    return Command(payload, _get_command_collector(payload, evaluator))

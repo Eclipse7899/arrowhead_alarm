@@ -2,44 +2,12 @@
 
 import asyncio
 import logging
-from asyncio import Task
-from dataclasses import dataclass
-from typing import Any, Callable, Generic, TypeVar
-
-from .protocol.models import VersionInfo
+from dataclasses import dataclass, field
+from typing import Callable, Generic, TypeVar
 
 _LOGGER = logging.getLogger(__name__)
 
 _T = TypeVar("_T")
-
-
-async def cancel_task(task: Task[Any] | None) -> None:
-    """Cancel the given asyncio task if it is not already done.
-
-    Args:
-        task: The asyncio task to cancel.
-
-    """
-    if task is not None and not task.done():
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-        except Exception as e:
-            _LOGGER.warning("Error while cancelling task: %s", type(e).__name__)
-
-
-def is_mode_4_supported(version: VersionInfo) -> bool:
-    """Check if Protocol Mode 4 is supported for the given firmware version.
-
-    Args:
-        version: Firmware version.
-
-    Returns: True if Protocol Mode 4 is supported, False otherwise.
-
-    """
-    return version >= VersionInfo(10, 3, 50)
 
 
 @dataclass
@@ -105,22 +73,36 @@ class ToggleEvent:
         await self._clear_event.wait()
 
 
+@dataclass
+class _Subscription(Generic[_T]):
+    """A subscription to a publisher."""
+    callback: Callable[[_T], None]
+    active: bool = field(default=True)
+
 class Publisher(Generic[_T]):
     """A _publisher that notifies subscribers of changes."""
 
     def __init__(self) -> None:
         """Initialize the Publisher."""
-        self._subscribers: set[Callable[[_T], None]] = set()
+        self._subscribers: dict[
+            Callable[[_T], None],
+            _Subscription[_T],
+        ] = {}
 
     def subscribe(self, callback: Callable[[_T], None]) -> None:
         """Subscribe to changes."""
-        self._subscribers.add(callback)
+        if callback not in self._subscribers:
+            self._subscribers[callback] = _Subscription(callback)
 
     def unsubscribe(self, callback: Callable[[_T], None]) -> None:
         """Unsubscribe from changes."""
-        self._subscribers.discard(callback)
+        if callback in self._subscribers:
+            self._subscribers[callback].active = False
+            del self._subscribers[callback]
 
     def dispatch(self, data: _T) -> None:
         """Notify subscribers of a change."""
-        for subscriber in self._subscribers:
-            subscriber(data)
+        snapshot = self._subscribers.copy()
+        for subscription in snapshot.values():
+            if subscription.active:
+                subscription.callback(data)

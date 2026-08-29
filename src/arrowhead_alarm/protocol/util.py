@@ -82,30 +82,6 @@ def get_protocol_exception(
             )
 
 
-def convert_multiline_to_response(data: str) -> Result[Response, ValueError]:
-    """Convert a multiline resp string to a cmd response object.
-
-    Args:
-        data: Input multiline string.
-
-    Returns: Result indicating success or rejection.
-
-    """
-    lines = data.splitlines()
-    if not lines:
-        return Failure(ValueError("Empty response resp"))
-
-    # Process each line and convert to Response
-    responses: list[Response] = []
-    for line in lines:
-        result = convert_to_response(line)
-        if isinstance(result, Failure):
-            return result  # Return the first failure encountered
-        responses.append(result.value)
-
-    return Success(responses[-1])  # Return the last response as the overall result
-
-
 def convert_to_response(data: str) -> Result[Response, ValueError]:
     """Convert a resp string to a cmd response object.
 
@@ -153,14 +129,14 @@ def convert_to_command_ok(data: str) -> Result[OkResponse, ValueError]:
     if not is_command_ok(data):
         return Failure(ValueError(f"Waiting cmd OK response: {data}"))
     try:
-        _, keyword, data = data.split(" ", 2)
-        return Success(OkResponse(keyword=keyword, data=data))
+        _, keyword, *rest = data.split(" ", 2)
+        return Success(OkResponse(keyword=keyword, data=" ".join(rest)))
     except ValueError:
         return Failure(ValueError(f"Waiting cmd OK response format: {data}"))
 
 
 version_regex = re.compile(
-    r"^([A-Za-z]+)\s+_F/W\s+Ver\.\s+(\d+)\.(\d+)\.(\d+)\s+\(([^)]+)\)$"
+    r"^([A-Za-z0-9-]+)\s+F/W\s+Ver\.\s+(\d+)\.(\d+)\.(\d+)\s+\(([^)]+)\)$"
 )
 
 
@@ -176,14 +152,12 @@ def parse_panel_version_string(version_resp: str) -> Result[PanelVersion, ValueE
     match = version_regex.match(version_resp.strip())
     if not match:
         return Failure(ValueError(f"Waiting version string format: {version_resp}"))
-    try:
-        model = match.group(1)
-        major = int(match.group(2))
-        minor = int(match.group(3))
-        patch = int(match.group(4))
-        serial_number = match.group(5)
-    except (IndexError, ValueError):
-        return Failure(ValueError(f"Waiting version string format: {version_resp}"))
+
+    model = match.group(1)
+    major = int(match.group(2))
+    minor = int(match.group(3))
+    patch = int(match.group(4))
+    serial_number = match.group(5)
 
     return Success(
         PanelVersion(

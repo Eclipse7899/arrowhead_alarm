@@ -1,6 +1,6 @@
 """Types used in the Arrowhead Alarm protocol."""
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum, IntFlag, auto
 from functools import total_ordering
 from typing import (
@@ -169,6 +169,13 @@ class AlarmState(Enum):
     ALARM_TRIGGERED = "alarm_triggered"
 
 
+class ArmingMode(Enum):
+    """Arming modes."""
+
+    AWAY = "away"
+    STAY = "stay"
+
+
 @dataclass
 class Area:
     """Alarm Area status_response."""
@@ -176,6 +183,14 @@ class Area:
     area_number: int
     state: AlarmState
     ready_to_arm: bool
+
+    def set_state(self, state: AlarmState) -> "Area":
+        """Set the area state."""
+        return replace(self, state=state)
+
+    def set_ready_to_arm(self, value: bool) -> "Area":
+        """Set whether the area is ready to arm."""
+        return replace(self, ready_to_arm=value)
 
 
 @dataclass
@@ -191,6 +206,34 @@ class Zone:
     zone_closed: bool
     sensor_watch_alarm: bool
 
+    def set_supervise_alarm(self, value: bool) -> "Zone":
+        """Set the supervise alarm state."""
+        return replace(self, supervise_alarm=value)
+
+    def set_trouble_alarm(self, value: bool) -> "Zone":
+        """Set the trouble alarm state."""
+        return replace(self, trouble_alarm=value)
+
+    def set_bypassed(self, value: bool) -> "Zone":
+        """Set the bypassed state."""
+        return replace(self, bypassed=value)
+
+    def set_alarm(self, value: bool) -> "Zone":
+        """Set the alarm state."""
+        return replace(self, alarm=value)
+
+    def set_radio_battery_low(self, value: bool) -> "Zone":
+        """Set the radio battery low state."""
+        return replace(self, radio_battery_low=value)
+
+    def set_closed(self, value: bool) -> "Zone":
+        """Set the zone closed state."""
+        return replace(self, zone_closed=value)
+
+    def set_sensor_watch_alarm(self, value: bool) -> "Zone":
+        """Set the sensor watch alarm state."""
+        return replace(self, sensor_watch_alarm=value)
+
 
 @dataclass
 class Expander:
@@ -202,6 +245,22 @@ class Expander:
     battery_fault: bool
     fuse_fault: bool
 
+    def set_tamper_alarm_triggered(self, value: bool) -> "Expander":
+        """Set the tamper alarm state."""
+        return replace(self, tamper_alarm_triggered=value)
+
+    def set_mains_fault(self, value: bool) -> "Expander":
+        """Set the mains fault state."""
+        return replace(self, mains_fault=value)
+
+    def set_battery_fault(self, value: bool) -> "Expander":
+        """Set the battery fault state."""
+        return replace(self, battery_fault=value)
+
+    def set_fuse_fault(self, value: bool) -> "Expander":
+        """Set the fuse fault state."""
+        return replace(self, fuse_fault=value)
+
 
 @dataclass
 class Output:
@@ -210,12 +269,9 @@ class Output:
     output_number: int
     on: bool
 
-
-class ArmingMode(Enum):
-    """Arming modes."""
-
-    AWAY = "away"
-    STAY = "stay"
+    def set_on(self, value: bool) -> "Output":
+        """Set the output state."""
+        return replace(self, on=value)
 
 
 @dataclass
@@ -243,6 +299,436 @@ class PanelState:
     zone_expanders: dict[int, Expander]
     output_expanders: dict[int, Expander]
     prox_expanders: dict[int, Expander]
+
+    def set_ready_to_arm(self, value: bool) -> "PanelState":
+        """Set whether the panel is ready to arm."""
+        return replace(self, ready_to_arm=value)
+
+    def set_battery_fault(self, value: bool) -> "PanelState":
+        """Set the panel battery fault state."""
+        return replace(self, battery_fault=value)
+
+    def set_mains_fault(self, value: bool) -> "PanelState":
+        """Set the panel mains fault state."""
+        return replace(self, mains_fault=value)
+
+    def set_tamper_alarm_triggered(self, value: bool) -> "PanelState":
+        """Set the panel tamper alarm state."""
+        return replace(self, tamper_alarm_triggered=value)
+
+    def set_line_fault(self, value: bool) -> "PanelState":
+        """Set the panel line fault state."""
+        return replace(self, line_fault=value)
+
+    def set_dialer_fault(self, value: bool) -> "PanelState":
+        """Set the panel dialer fault state."""
+        return replace(self, dialer_fault=value)
+
+    def set_dialer_line_fault(self, value: bool) -> "PanelState":
+        """Set the panel dialer line fault state."""
+        return replace(self, dialer_line_fault=value)
+
+    def set_fuse_fault(self, value: bool) -> "PanelState":
+        """Set the panel fuse fault state."""
+        return replace(self, fuse_fault=value)
+
+    def set_monitoring_station_active(self, value: bool) -> "PanelState":
+        """Set whether the monitoring station is active."""
+        return replace(self, monitoring_station_active=value)
+
+    def set_dialer_active(self, value: bool) -> "PanelState":
+        """Set whether the dialer is active."""
+        return replace(self, dialer_active=value)
+
+    def set_code_tamper(self, value: bool) -> "PanelState":
+        """Set the code tamper state."""
+        return replace(self, code_tamper=value)
+
+    def set_receiver_fault(self, value: bool | None) -> "PanelState":
+        """Set the receiver fault state."""
+        return replace(self, receiver_fault=value)
+
+    def set_pendant_battery_fault(self, value: bool | None) -> "PanelState":
+        """Set the pendant battery fault state."""
+        return replace(self, pendant_battery_fault=value)
+
+    def set_rf_battery_low(self, value: bool | None) -> "PanelState":
+        """Set the RF battery low state."""
+        return replace(self, rf_battery_low=value)
+
+    def set_sensor_watch_alarm(self, value: bool | None) -> "PanelState":
+        """Set the panel sensor watch alarm state."""
+        return replace(self, sensor_watch_alarm=value)
+
+    def set_area_state(
+        self,
+        area_number: int,
+        state: AlarmState,
+    ) -> "PanelState":
+        """Set the state of an area."""
+        if area_number not in self.areas:
+            return self
+
+        area = self.areas[area_number].set_state(state)
+
+        return replace(
+            self,
+            areas=self.areas | {area_number: area},
+        )
+
+    def set_area_ready(
+        self,
+        area_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set whether an area is ready to arm."""
+        if area_number not in self.areas:
+            return self
+
+        area = self.areas[area_number].set_ready_to_arm(value)
+
+        return replace(
+            self,
+            areas=self.areas | {area_number: area},
+        )
+
+    def set_zone_alarm(
+        self,
+        zone_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the alarm state of a zone."""
+        if zone_number not in self.zones:
+            return self
+
+        zone = self.zones[zone_number].set_alarm(value)
+
+        return replace(
+            self,
+            zones=self.zones | {zone_number: zone},
+        )
+
+    def set_zone_radio_battery_low(
+        self,
+        zone_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the radio battery low state of a zone."""
+        if zone_number not in self.zones:
+            return self
+
+        zone = self.zones[zone_number].set_radio_battery_low(value)
+
+        return replace(
+            self,
+            zones=self.zones | {zone_number: zone},
+        )
+
+    def set_zone_bypassed(
+        self,
+        zone_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the bypassed state of a zone."""
+        if zone_number not in self.zones:
+            return self
+
+        zone = self.zones[zone_number].set_bypassed(value)
+
+        return replace(
+            self,
+            zones=self.zones | {zone_number: zone},
+        )
+
+    def set_zone_closed(
+        self,
+        zone_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the closed state of a zone."""
+        if zone_number not in self.zones:
+            return self
+
+        zone = self.zones[zone_number].set_closed(value)
+
+        return replace(
+            self,
+            zones=self.zones | {zone_number: zone},
+        )
+
+    def set_zone_sensor_watch_alarm(
+        self,
+        zone_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the sensor watch alarm state of a zone."""
+        if zone_number not in self.zones:
+            return self
+
+        zone = self.zones[zone_number].set_sensor_watch_alarm(value)
+
+        return replace(
+            self,
+            zones=self.zones | {zone_number: zone},
+        )
+
+    def set_zone_trouble_alarm(
+        self,
+        zone_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the trouble alarm state of a zone."""
+        if zone_number not in self.zones:
+            return self
+
+        zone = self.zones[zone_number].set_trouble_alarm(value)
+
+        return replace(
+            self,
+            zones=self.zones | {zone_number: zone},
+        )
+
+    def set_zone_supervise_alarm(
+        self,
+        zone_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the supervise alarm state of a zone."""
+        if zone_number not in self.zones:
+            return self
+
+        zone = self.zones[zone_number].set_supervise_alarm(value)
+
+        return replace(
+            self,
+            zones=self.zones | {zone_number: zone},
+        )
+
+    def set_output_on(
+        self,
+        output_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the output state."""
+        if output_number not in self.outputs:
+            return self
+
+        output = self.outputs[output_number].set_on(value)
+
+        return replace(
+            self,
+            outputs=self.outputs | {output_number: output},
+        )
+
+    def set_zone_expander_battery_fault(
+        self,
+        expander_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the battery fault state of a zone expander."""
+        if expander_number not in self.zone_expanders:
+            return self
+
+        expander = self.zone_expanders[expander_number].set_battery_fault(value)
+
+        return replace(
+            self,
+            zone_expanders=self.zone_expanders
+            | {expander_number: expander},
+        )
+
+    def set_zone_expander_mains_fault(
+        self,
+        expander_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the mains fault state of a zone expander."""
+        if expander_number not in self.zone_expanders:
+            return self
+
+        expander = self.zone_expanders[expander_number].set_mains_fault(value)
+
+        return replace(
+            self,
+            zone_expanders=self.zone_expanders
+            | {expander_number: expander},
+        )
+
+    def set_zone_expander_fuse_fault(
+        self,
+        expander_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the fuse fault state of a zone expander."""
+        if expander_number not in self.zone_expanders:
+            return self
+
+        expander = self.zone_expanders[expander_number].set_fuse_fault(value)
+
+        return replace(
+            self,
+            zone_expanders=self.zone_expanders
+            | {expander_number: expander},
+        )
+
+    def set_zone_expander_tamper_alarm_triggered(
+        self,
+        expander_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the tamper alarm state of a zone expander."""
+        if expander_number not in self.zone_expanders:
+            return self
+
+        expander = self.zone_expanders[
+            expander_number
+        ].set_tamper_alarm_triggered(value)
+
+        return replace(
+            self,
+            zone_expanders=self.zone_expanders
+            | {expander_number: expander},
+        )
+
+    def set_output_expander_battery_fault(
+        self,
+        expander_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the battery fault state of an output expander."""
+        if expander_number not in self.output_expanders:
+            return self
+
+        expander = self.output_expanders[expander_number].set_battery_fault(value)
+
+        return replace(
+            self,
+            output_expanders=self.output_expanders
+            | {expander_number: expander},
+        )
+
+    def set_output_expander_mains_fault(
+        self,
+        expander_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the mains fault state of an output expander."""
+        if expander_number not in self.output_expanders:
+            return self
+
+        expander = self.output_expanders[expander_number].set_mains_fault(value)
+
+        return replace(
+            self,
+            output_expanders=self.output_expanders
+            | {expander_number: expander},
+        )
+
+    def set_output_expander_fuse_fault(
+        self,
+        expander_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the fuse fault state of an output expander."""
+        if expander_number not in self.output_expanders:
+            return self
+
+        expander = self.output_expanders[expander_number].set_fuse_fault(value)
+
+        return replace(
+            self,
+            output_expanders=self.output_expanders
+            | {expander_number: expander},
+        )
+
+    def set_output_expander_tamper_alarm_triggered(
+        self,
+        expander_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the tamper alarm state of an output expander."""
+        if expander_number not in self.output_expanders:
+            return self
+
+        expander = self.output_expanders[
+            expander_number
+        ].set_tamper_alarm_triggered(value)
+
+        return replace(
+            self,
+            output_expanders=self.output_expanders
+            | {expander_number: expander},
+        )
+
+    def set_prox_expander_battery_fault(
+        self,
+        expander_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the battery fault state of a prox expander."""
+        if expander_number not in self.prox_expanders:
+            return self
+
+        expander = self.prox_expanders[expander_number].set_battery_fault(value)
+
+        return replace(
+            self,
+            prox_expanders=self.prox_expanders
+            | {expander_number: expander},
+        )
+
+    def set_prox_expander_mains_fault(
+        self,
+        expander_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the mains fault state of a prox expander."""
+        if expander_number not in self.prox_expanders:
+            return self
+
+        expander = self.prox_expanders[expander_number].set_mains_fault(value)
+
+        return replace(
+            self,
+            prox_expanders=self.prox_expanders
+            | {expander_number: expander},
+        )
+
+    def set_prox_expander_fuse_fault(
+        self,
+        expander_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the fuse fault state of a prox expander."""
+        if expander_number not in self.prox_expanders:
+            return self
+
+        expander = self.prox_expanders[expander_number].set_fuse_fault(value)
+
+        return replace(
+            self,
+            prox_expanders=self.prox_expanders
+            | {expander_number: expander},
+        )
+
+    def set_prox_expander_tamper_alarm_triggered(
+        self,
+        expander_number: int,
+        value: bool,
+    ) -> "PanelState":
+        """Set the tamper alarm state of a prox expander."""
+        if expander_number not in self.prox_expanders:
+            return self
+
+        expander = self.prox_expanders[
+            expander_number
+        ].set_tamper_alarm_triggered(value)
+
+        return replace(
+            self,
+            prox_expanders=self.prox_expanders
+            | {expander_number: expander},
+        )
 
 
 @dataclass

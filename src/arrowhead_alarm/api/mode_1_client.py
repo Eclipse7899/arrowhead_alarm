@@ -34,7 +34,7 @@ class Mode1Client(ProtocolClient):
         super().__init__(host, port, credentials)
 
     async def arm_button(self, arm_mode: ArmingMode) -> None:
-        """Arm the system using single button arming without a user code.
+        """Arm the system using the arming button without a user code.
 
         Args:
             arm_mode: The arming mode (e.g., AWAY, STAY).
