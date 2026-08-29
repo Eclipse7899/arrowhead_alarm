@@ -35,8 +35,7 @@ jobs:
       - name: Coverage
         run: uv run pytest --cov=src/arrowhead_alarm --cov-report=xml --cov-report=term-missing src/tests
 
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          name: coverage-report
-          path: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}

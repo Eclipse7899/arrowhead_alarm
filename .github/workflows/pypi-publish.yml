@@ -34,7 +34,7 @@ jobs:
         run: uvx ty check --output-format=github src
 
       - name: Run tests
-        run: uvx uv run pytest src/tests
+        run: uv run pytest src/tests
 
   release-build:
     runs-on: ubuntu-latest
