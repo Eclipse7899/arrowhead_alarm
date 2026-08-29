@@ -18,7 +18,6 @@ from .models import (
 from .types import (
     Failure,
     Result,
-    ResultTransformer,
     Success,
     Transformer,
 )
@@ -30,7 +29,7 @@ from .util import (
 
 def get_cmd_keyword_transformer(
     keyword: str,
-) -> ResultTransformer[Response, Response, ProtocolErrorCode]:
+) -> Callable[[Response], Result[Response, ProtocolErrorCode]]:
     """Create an _collector that checks a Response keyword."""
 
     def cmd_keyword_evaluator(resp: Response) -> Result[Response, ProtocolErrorCode]:
@@ -109,7 +108,9 @@ def boolean_response_transformer(
         return Failure(ProtocolErrorCode.INVALID_RESPONSE)
 
 
-def get_int_prefix_transformer(expected_int: int) -> ResultTransformer[str, str, ProtocolErrorCode]:
+def get_int_prefix_transformer(
+        expected_int: int
+) -> Callable[[str], Result[str, ProtocolErrorCode]]:
     """Return a transformer that checks for an expected integer followed by a string."""
 
     def transformer(

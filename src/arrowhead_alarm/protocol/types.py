@@ -23,8 +23,6 @@ _E = TypeVar("_E")
 _F = TypeVar("_F")
 
 Transformer: TypeAlias = Callable[[_T], _U]
-ResultTransformer: TypeAlias = Callable[[_T], "Result[_U, _E]"]
-
 
 class ResultBase(ABC, Generic[_T, _E]):
     """Abstract base class for Result types."""
@@ -32,7 +30,7 @@ class ResultBase(ABC, Generic[_T, _E]):
     is_ok: bool
 
     @abstractmethod
-    def bind(self, func: ResultTransformer[_T, _U, _E]) -> "Result[_U, _E]":
+    def bind(self, func: Callable[[_T], "Result[_U, _E]"]) -> "Result[_U, _E]":
         """Bind the result to a function that returns a Result.
 
         Args:
@@ -76,7 +74,7 @@ class Success(ResultBase[_T, _E], Generic[_T, _E]):
     is_ok: Literal[True] = True
 
     @override
-    def bind(self, func: ResultTransformer[_T, _U, _E]) -> "Result[_U, _E]":
+    def bind(self, func: Callable[[_T], "Result[_U, _E]"]) -> "Result[_U, _E]":
         """Bind the success value to a function that returns a Result.
 
         Args:
@@ -120,7 +118,7 @@ class Failure(ResultBase[_T, _E], Generic[_T, _E]):
     is_ok: Literal[False] = False
 
     @override
-    def bind(self, func: ResultTransformer[_T, _U, _E]) -> "Result[_U, _E]":
+    def bind(self, func: Callable[[_T], "Result[_U, _E]"]) -> "Result[_U, _E]":
         """Bind the failure to a function that returns a Result.
 
         Args:
@@ -163,9 +161,9 @@ Result: TypeAlias = Success[_T, _E] | Failure[_T, _E]
 class ResultPipeline(Generic[_T, _U, _E]):
     """A flow of Result transformations."""
 
-    _transformer: ResultTransformer[_T, _U, _E]
+    _transformer: Callable[[_T], "Result[_U, _E]"]
 
-    def bind(self, other: ResultTransformer[_U, _V, _E]) -> "ResultPipeline[_T, _V, _E]":
+    def bind(self, other: Callable[[_U], "Result[_V, _E]"]) -> "ResultPipeline[_T, _V, _E]":
         """Bind the pipeline to another ResultTransformer.
 
         Args:
@@ -185,7 +183,7 @@ class ResultPipeline(Generic[_T, _U, _E]):
         """Map the error of the pipeline to a new value."""
         return ResultPipeline(lambda data: self._transformer(data).map_error(other))
 
-    def unwrap(self) -> ResultTransformer[_T, _U, _E]:
+    def unwrap(self) -> Callable[[_T], "Result[_U, _E]"]:
         """Return the flattened ResultPipeline."""
         return self._transformer
 
