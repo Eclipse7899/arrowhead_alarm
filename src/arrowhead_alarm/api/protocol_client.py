@@ -42,20 +42,25 @@ class ProtocolClient(ABC):
         self._client = CommandClient(session)
         self.state_publisher: Publisher[PanelState] = Publisher()
 
+    @property
+    def state(self) -> PanelState:
+        """Get the current state of the panel."""
+        return self._state
+
     def _update_state(self, mutate_func: Callable[[PanelState], PanelState]) -> None:
         """Update the internal state of the panel."""
         new_state = mutate_func(self._state)
         self._state = new_state
         self.state_publisher.dispatch(new_state)
 
-    async def start(self) -> None:
-        """Start the protocol client."""
+    async def connect(self) -> None:
+        """Connect the protocol client to the alarm panel."""
         await self._client.connect()
         await self._set_mode()
         self._client.subscribe(self._handle_event)
 
-    async def stop(self) -> None:
-        """Stop the protocol client."""
+    async def disconnect(self) -> None:
+        """Disconnect from the alarm panel."""
         await self._client.disconnect()
         self._client.unsubscribe(self._handle_event)
 

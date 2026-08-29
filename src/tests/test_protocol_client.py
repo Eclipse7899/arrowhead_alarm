@@ -138,7 +138,7 @@ async def test_start_connects_sets_mode_and_subscribes(
         "arrowhead_alarm.api.protocol_client.mode_command",
         return_value="MODE COMMAND",
     ) as mode_command:
-        await client.start()
+        await client.connect()
 
     command_client.connect.assert_awaited_once_with()
     mode_command.assert_called_once_with(ProtocolMode.MODE_1)
@@ -159,7 +159,7 @@ async def test_start_raises_when_setting_mode_fails(
         return_value="MODE COMMAND",
     ):
         with pytest.raises(RuntimeError, match="mode failed") as exc_info:
-            await client.start()
+            await client.connect()
 
     assert exc_info.value is error
     command_client.connect.assert_awaited_once_with()
@@ -171,7 +171,7 @@ async def test_stop_disconnects_and_unsubscribes(
     client: TestProtocolClient,
     command_client: MagicMock,
 ) -> None:
-    await client.stop()
+    await client.disconnect()
 
     command_client.disconnect.assert_awaited_once_with()
     command_client.unsubscribe.assert_called_once_with(client._handle_event)
