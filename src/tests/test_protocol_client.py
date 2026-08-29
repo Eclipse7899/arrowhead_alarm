@@ -9,10 +9,10 @@ from arrowhead_alarm.protocol.models import PanelState, ProtocolMode, PanelVersi
 from arrowhead_alarm.protocol.types import Success, Failure
 from arrowhead_alarm.util import LoginCredentials
 
-
 class TestProtocolClient(ProtocolClient):
-    mode = ProtocolMode.MODE_1
+    __test__ = False
 
+    mode = ProtocolMode.MODE_1
     delimiter = "\n\r"
 
 
