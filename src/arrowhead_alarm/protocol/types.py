@@ -243,16 +243,6 @@ Collector: TypeAlias = Callable[[_T], CollectionResult[_U]]
 class CollectorPipeline(Generic[_T, _U]):
     """Represents a pipeline of evaluators."""
 
-    @classmethod
-    def of_string(cls) -> "CollectorPipeline[str, str]":
-        """Create an empty CollectorPipeline."""
-        return CollectorPipeline(lambda data: Done(data))
-
-    @classmethod
-    def of_string_list(cls) -> "CollectorPipeline[list[str], list[str]]":
-        """Create an empty CollectorPipeline for a list of strings."""
-        return CollectorPipeline(lambda data: Done(data))
-
     def __init__(self, collector: Collector[_T, _U]) -> None:
         """Initialize the CollectorPipeline.
 
@@ -279,18 +269,6 @@ class CollectorPipeline(Generic[_T, _U]):
         """Return the flattened _collector."""
         return self._collector
 
-    def compile(self) -> Callable[[_T], _U | None]:
-        """Return a function that return completed value or None."""
-
-        def complete_collector(data: _T) -> _U | None:
-            result = self._collector(data)
-            if isinstance(result, Done):
-                return result.value
-            else:
-                return None
-
-        return complete_collector
-
 
 @dataclass
 class CollectorContext(Generic[_T, _U]):
@@ -307,26 +285,6 @@ class CollectorContext(Generic[_T, _U]):
     def map(self, func: Callable[[_T], _V]) -> "CollectorContext[_V, _U]":
         """Map the original to a new value."""
         return CollectorContext(func(self.data), self.original)
-
-    def bind(
-        self,
-        func: Callable[[_T], CollectionResult[_V]],
-    ) -> CollectionResult["CollectorContext[_V, _U]"]:
-        """Bind a collection function to the current context data.
-
-        Args:
-            func: Function that processes the context data and returns a
-            CollectionResult.
-
-        Returns:
-            A CollectionResult containing the updated context or waiting status.
-        """
-        return func(self.data).map(
-            lambda data: CollectorContext(
-                original=self.original,
-                data=data,
-            )
-        )
 
 
 @dataclass

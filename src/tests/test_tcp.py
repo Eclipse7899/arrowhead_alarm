@@ -123,10 +123,31 @@ class TestTcpTransport:
         )
         mock_reader_writer[1].drain.assert_called_once()
 
+    @patch("asyncio.open_connection")
+    async def test_writeline_success(
+            self, mock_open_connection, transport, mock_reader_writer
+    ):
+        """Test successfully writing request."""
+        mock_open_connection.return_value = mock_reader_writer
+        await transport.connect()
+
+        test_payload = "TEST_CMD"
+        await transport.writeln(test_payload)
+
+        mock_reader_writer[1].write.assert_called_once_with(
+            test_payload.encode(transport.encoding) + b"\n"
+        )
+        mock_reader_writer[1].drain.assert_called_once()
+
     async def test_write_disconnected(self, transport):
         """Test writing when not connected raises ConnectionError."""
         with pytest.raises(ConnectionError, match="TCP _transport not connected"):
             await transport.write("TEST_CMD")
+
+    async def test_write_disconnected(self, transport):
+        """Test writing when not connected raises ConnectionError."""
+        with pytest.raises(ConnectionError, match="TCP _transport not connected"):
+            await transport.writeln("TEST_CMD")
 
     @patch("asyncio.open_connection")
     async def test_read_success(
@@ -162,6 +183,23 @@ class TestTcpTransport:
 
         with pytest.raises(ConnectionError, match="TCP connection closed by peer"):
             await transport.read()
+
+        # Ensure internal state is updated to disconnected
+        assert isinstance(transport._state, TcpDisconnected)
+
+    @patch("asyncio.open_connection")
+    async def test_read_line_connection_closed_by_peer(
+            self, mock_open_connection, transport, mock_reader_writer
+    ):
+        """Test read behavior when the peer closes the socket (EOF)."""
+        mock_open_connection.return_value = mock_reader_writer
+        await transport.connect()
+
+        # Mock EOF
+        mock_reader_writer[0].readline.return_value = b""
+
+        with pytest.raises(ConnectionError, match="TCP connection closed by peer"):
+            await transport.readline()
 
         # Ensure internal state is updated to disconnected
         assert isinstance(transport._state, TcpDisconnected)
