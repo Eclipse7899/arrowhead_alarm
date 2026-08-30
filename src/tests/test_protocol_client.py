@@ -1,4 +1,3 @@
-
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -8,6 +7,7 @@ from arrowhead_alarm.protocol.defaults import DEFAULT_MAX_OUTPUTS, DEFAULT_MAX_Z
 from arrowhead_alarm.protocol.models import PanelState, ProtocolMode, PanelVersion, VersionInfo
 from arrowhead_alarm.protocol.types import Success, Failure
 from arrowhead_alarm.util import LoginCredentials
+
 
 class TestProtocolClient(ProtocolClient):
     __test__ = False
@@ -37,6 +37,8 @@ def client(credentials: LoginCredentials) -> TestProtocolClient:
             host="127.0.0.1",
             port=12345,
             credentials=credentials,
+            command_timeout=3.0,
+            connection_timeout=5.0
         )
 
 
@@ -86,6 +88,8 @@ def test_initial_state_is_default_state(
             "127.0.0.1",
             12345,
             credentials,
+            command_timeout=3.0,
+            connection_timeout=5.0
         )
 
         assert client._state is state
@@ -112,6 +116,8 @@ def test_client_initializes_transport_and_session(
             "127.0.0.1",
             12345,
             credentials,
+            command_timeout=3.0,
+            connection_timeout=5.0
         )
 
     transport_factory.assert_called_once_with(
@@ -788,3 +794,51 @@ async def test_state_method_raises_error_response(
     assert exc_info.value is error
     command_mock.assert_called_once_with(*command_args)
     command_client.request.assert_awaited_once_with(command)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "timeout_attr", "timeout"),
+    [
+        ("connect", "_connection_timeout", 10.0),
+        ("disconnect", "_connection_timeout", 20.0),
+        ("connect", "_connection_timeout", 30.0),
+        ("disconnect", "_connection_timeout", 40.0),
+    ],
+)
+async def test_connection_timeout(
+    client,
+    method,
+    timeout_attr,
+    timeout,
+):
+    setattr(client, timeout_attr, timeout)
+    client._send_command = AsyncMock()
+
+    with (
+        patch(
+        "arrowhead_alarm.api.protocol_client.asyncio.wait_for",
+            new=AsyncMock()
+        )
+    as wait_for):
+        await getattr(client, method)()
+
+    coroutine = wait_for.call_args.args[0]
+    assert coroutine is not None
+    assert wait_for.call_args.kwargs == {"timeout": timeout}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("timeout", [0.1, 1.0, 5.0, 100])
+async def test_send_command_timeout(client, timeout):
+    client._timeout = timeout
+    command = MagicMock()
+
+    with patch(
+        "arrowhead_alarm.api.protocol_client.asyncio.wait_for",
+        new=AsyncMock(),
+    ) as wait_for:
+        await client._send_command(command)
+
+    wait_for.assert_awaited_once()
+    assert wait_for.call_args.kwargs == {"timeout": timeout}

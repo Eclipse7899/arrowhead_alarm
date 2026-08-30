@@ -21,15 +21,24 @@ class Mode3Client(ProtocolClient):
     mode = ProtocolMode.MODE_3
     delimiter = "\n\r"
 
-    def __init__(self, host: str, port: int, credentials: LoginCredentials | None) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        credentials: LoginCredentials | None,
+        command_timeout: float = 3.0,
+        connection_timeout: float = 5.0,
+    ) -> None:
         """Initialize the Mode 3 client.
 
         Args:
             host: Hostname or IP address of the alarm panel.
             port: TCP port number of the alarm panel.
             credentials: Login credentials for authentication, or None.
+            command_timeout: The timeout for command operations.
+            connection_timeout: The timeout for connection operations.
         """
-        super().__init__(host, port, credentials)
+        super().__init__(host, port, credentials, command_timeout, connection_timeout)
 
     async def arm_button(self, arm_mode: ArmingMode) -> None:
         """Arm the system using single button arming without a user code.
@@ -45,7 +54,7 @@ class Mode3Client(ProtocolClient):
             arm_mode,
         )
 
-        result = await self._client.request(arm_button_command(arm_mode))
+        result = await self._send_command(arm_button_command(arm_mode))
 
         if result.is_ok:
             _LOGGER.info(
@@ -81,7 +90,7 @@ class Mode3Client(ProtocolClient):
             user,
         )
 
-        result = await self._client.request(arm_user_command(user, pin, arm_mode))
+        result = await self._send_command(arm_user_command(user, pin, arm_mode))
 
         if result.is_ok:
             _LOGGER.info(
@@ -116,7 +125,7 @@ class Mode3Client(ProtocolClient):
             user,
         )
 
-        result = await self._client.request(arm_no_pin_command(user, mode))
+        result = await self._send_command(arm_no_pin_command(user, mode))
 
         if result.is_ok:
             _LOGGER.info(
@@ -150,7 +159,7 @@ class Mode3Client(ProtocolClient):
             user,
         )
 
-        result = await self._client.request(disarm_user_command(user, pin))
+        result = await self._send_command(disarm_user_command(user, pin))
 
         if result.is_ok:
             _LOGGER.info(

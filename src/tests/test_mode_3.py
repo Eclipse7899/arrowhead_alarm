@@ -26,9 +26,8 @@ def client(credentials: LoginCredentials) -> Mode3Client:
 
 @pytest.fixture
 def request_mock(client: Mode3Client) -> AsyncMock:
-    client._client = MagicMock()
-    client._client.request = AsyncMock()
-    return client._client.request
+    client._send_command = AsyncMock()
+    return client._send_command
 
 
 def successful_result() -> MagicMock:

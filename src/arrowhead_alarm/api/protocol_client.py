@@ -1,9 +1,12 @@
 """Base protocol client module for Arrowhead alarm systems."""
 
+import asyncio
 import logging
 from abc import ABC
 from dataclasses import replace
-from typing import Callable
+from typing import Callable, TypeVar
+
+from arrowhead_alarm.protocol.types import Command
 
 from ..protocol.commands import (
     bypass_zone_command,
@@ -23,21 +26,35 @@ from ..util import LoginCredentials, Publisher
 
 _LOGGER = logging.getLogger(__name__)
 
+_T = TypeVar("_T")
+
 
 class ProtocolClient(ABC):
     """The base client for a specific ECI protocol mode."""
 
     mode: ProtocolMode
 
-    def __init__(self, host: str, port: int, credentials: LoginCredentials | None) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        credentials: LoginCredentials | None,
+        command_timeout: float,
+        connection_timeout: float,
+    ) -> None:
         """Initialize the protocol client.
 
         Args:
             host: Hostname or IP address of the alarm panel.
             port: TCP port number of the alarm panel.
             credentials: Login credentials for authentication, or None.
+            command_timeout: The timeout for command operations.
+            connection_timeout: The timeout for connection operations.
         """
         session = AuthenticatedSession(TcpTransport(host, port), credentials)
+        self._timeout = command_timeout
+        self._connection_timeout = connection_timeout
+
         self._state: PanelState = get_default_state()
         self._client = CommandClient(session)
         self.state_publisher: Publisher[PanelState] = Publisher()
@@ -55,14 +72,18 @@ class ProtocolClient(ABC):
 
     async def connect(self) -> None:
         """Connect the protocol client to the alarm panel."""
-        await self._client.connect()
+        await asyncio.wait_for(self._client.connect(), timeout=self._connection_timeout)
         await self._set_mode()
         self._client.subscribe(self._handle_event)
 
     async def disconnect(self) -> None:
         """Disconnect from the alarm panel."""
-        await self._client.disconnect()
+        await asyncio.wait_for(self._client.disconnect(), timeout=self._connection_timeout)
         self._client.unsubscribe(self._handle_event)
+
+    async def _send_command(self, command: Command[_T]) -> _T:
+        """Send a command to the alarm panel."""
+        return await asyncio.wait_for(self._client.request(command), timeout=self._timeout)
 
     def _handle_event(self, data: str) -> None:
         """Handle incoming events from the panel."""
@@ -77,7 +98,7 @@ class ProtocolClient(ABC):
     async def _set_mode(self) -> None:
         """Set the protocol mode."""
         _LOGGER.info("Setting protocol mode to %s", self.mode)
-        result = await self._client.request(mode_command(self.mode))
+        result = await self._send_command(mode_command(self.mode))
         if result.is_ok:
             _LOGGER.info("Protocol mode set to %s", self.mode)
         else:
@@ -93,7 +114,7 @@ class ProtocolClient(ABC):
         Raises:
             Exception: If querying the version fails.
         """
-        resp = await self._client.request(version_command())
+        resp = await self._send_command(version_command())
         if resp.is_ok:
             return resp.value
         raise resp.error
@@ -113,7 +134,7 @@ class ProtocolClient(ABC):
             _LOGGER.error("Output %d does not exist in the current state", output_number)
             raise ValueError(f"Output {output_number} does not exist in the current state")
 
-        result = await self._client.request(set_output_command(output_number, True))
+        result = await self._send_command(set_output_command(output_number, True))
         if result.is_ok:
             _LOGGER.info("Output %d turned on", output_number)
             self._update_state(
@@ -144,7 +165,7 @@ class ProtocolClient(ABC):
             _LOGGER.error("Output %d does not exist in the current state", output_number)
             raise ValueError(f"Output {output_number} does not exist in the current state")
 
-        result = await self._client.request(set_output_command(output_number, False))
+        result = await self._send_command(set_output_command(output_number, False))
         if result.is_ok:
             _LOGGER.info("Output %d turned off", output_number)
             self._state.outputs[output_number].on = False
@@ -170,7 +191,7 @@ class ProtocolClient(ABC):
             _LOGGER.error("Output %d does not exist in the current state", output_number)
             raise ValueError(f"Output {output_number} does not exist in the current state")
 
-        result = await self._client.request(output_state_command(output_number))
+        result = await self._send_command(output_state_command(output_number))
         if result.is_ok:
             _LOGGER.info("Output %d state queried", output_number)
             self._state.outputs[output_number].on = result.value
@@ -193,7 +214,7 @@ class ProtocolClient(ABC):
             _LOGGER.error("Zone %d does not exist in the current state", zone_number)
             raise ValueError(f"Zone {zone_number} does not exist in the current state")
 
-        result = await self._client.request(bypass_zone_command(zone_number))
+        result = await self._send_command(bypass_zone_command(zone_number))
         if result.is_ok:
             _LOGGER.info("Zone %d bypassed", zone_number)
             self._state.zones[zone_number].bypassed = True
@@ -215,7 +236,7 @@ class ProtocolClient(ABC):
             raise ValueError(f"Zone {zone_number} does not exist in the current state")
 
         _LOGGER.info("Unbypassing zone %d", zone_number)
-        result = await self._client.request(unbypass_zone_command(zone_number))
+        result = await self._send_command(unbypass_zone_command(zone_number))
         if result.is_ok:
             _LOGGER.info("Zone %d unbypassed", zone_number)
             self._state.zones[zone_number].bypassed = False
