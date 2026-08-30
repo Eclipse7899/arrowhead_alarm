@@ -93,7 +93,7 @@ class ProtocolClient(ABC):
         if result.is_ok:
             self._update_state(result.value)
         else:
-            _LOGGER.error("Error processing event: %s", result.error)
+            _LOGGER.warning("Message was not parsed as an event: %s, error: %s", data, result.error)
 
     async def _set_mode(self) -> None:
         """Set the protocol mode."""
