@@ -56,21 +56,26 @@ class TestVersionCommand:
             ),
         )
 
-    def test_eci_version(self):
+    @pytest.mark.parametrize(
+        ("version_response", "expected_model", "expected_version", "expected_serial_number"),
+        [
+            ('OK Version "ECi F/W Ver. 10.2.426 (GKRA6PJW)"', "ECi", VersionInfo(10, 2, 426), "GKRA6PJW"),
+            ('OK Version "ECi FW Ver. 10.3.57 (GKRA6PJW)"', "ECi", VersionInfo(10, 3, 57), "GKRA6PJW")
+        ]
+    )
+    def test_eci_version(self, version_response, expected_model, expected_version, expected_serial_number):
         command = version_command()
 
-        result = command.collector(
-            'OK Version "ECi F/W Ver. 10.2.426 (GKRA6PJW)"'
-        )
+        result = command.collector(version_response)
         
         assert result.is_done
 
         assert_success(
             result.value,
             PanelVersion(
-                model="ECi",
-                firmware_version=VersionInfo(10, 2, 426),
-                serial_number="GKRA6PJW",
+                model=expected_model,
+                firmware_version=expected_version,
+                serial_number=expected_serial_number,
             ),
         )
 

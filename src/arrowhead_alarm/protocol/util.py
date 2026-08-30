@@ -133,8 +133,9 @@ def convert_to_command_ok(data: str) -> Result[OkResponse, ValueError]:
         return Failure(ValueError(f"Waiting cmd OK response format: {data}"))
 
 
-version_regex = re.compile(r"^([A-Za-z0-9-]+)\s+F/W\s+Ver\.\s+(\d+)\.(\d+)\.(\d+)\s+\(([^)]+)\)$")
-
+version_regex = re.compile(
+    r"^([A-Za-z0-9-]+)\s+F/?W\s+Ver\.\s+(\d+)\.(\d+)\.(\d+)\s+\(([^)]+)\)$"
+)
 
 def parse_panel_version_string(version_resp: str) -> Result[PanelVersion, ValueError]:
     """Parse the version response returned by the panel.
