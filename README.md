@@ -36,7 +36,7 @@ async def main():
     ),
 
     await client.connect()
-    await client.arm_area(1, ArmingMode.AWAY)
+    await client.arm_button(ArmingMode.AWAY)
 
 ```
 
