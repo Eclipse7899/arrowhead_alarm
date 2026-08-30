@@ -108,25 +108,6 @@ def version_command() -> Command[Result[PanelVersion, ProtocolError]]:
 
     return Command(payload, _get_command_collector(payload, response_parser))
 
-
-class ModeResponseCollector:
-    """Collector for mode response lines."""
-    def __init__(self) -> None:
-        """Initialize the ModeResponseCollector."""
-        self._lines: list[str] = []
-
-    def collect(self, line: str) -> CollectionResult[list[str]]:
-        """Collect the mode response lines."""
-        self._lines.append(line)
-
-        if is_command_error(line):
-            return Done(self._lines)
-
-        if len(self._lines) == 2:
-            return Done(self._lines)
-
-        return Waiting()
-
 def mode_command(mode: ProtocolMode) -> Command[Result[ProtocolMode, ProtocolError]]:
     """Create a command to set the protocol mode.
 
@@ -145,14 +126,7 @@ def mode_command(mode: ProtocolMode) -> Command[Result[ProtocolMode, ProtocolErr
 
     payload = CommandPayload(CMD_MODE, [mode.value]).build()
 
-    collector = (
-        CollectorPipeline(ModeResponseCollector().collect)
-        .map(lambda lines: " ".join(lines))
-        .bind(_get_command_collector(payload, response_parser))
-        .unwrap()
-    )
-
-    return Command(payload, collector)
+    return Command(payload, _get_command_collector(payload, response_parser))
 
 
 def arm_button_command(mode: ArmingMode) -> Command[Result[None, ProtocolError]]:
@@ -172,7 +146,11 @@ def arm_button_command(mode: ArmingMode) -> Command[Result[None, ProtocolError]]
 
     payload = CommandPayload(keyword, []).build()
 
-    evaluator = _get_cmd_result_pipeline(keyword).bind(lambda _: Success(None)).unwrap()
+    evaluator = (
+        _get_cmd_result_pipeline(keyword)
+         .bind(lambda _: Success(None))
+         .unwrap()
+    )
 
     return Command(payload, _get_command_collector(payload, evaluator))
 

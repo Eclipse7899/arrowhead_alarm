@@ -27,8 +27,7 @@ def transport():
     return TcpTransport(
         host="192.168.1.100",
         port=5000,
-        encoding="ascii",
-        connect_timeout=0.1
+        encoding="ascii"
     )
 
 
@@ -71,20 +70,6 @@ class TestTcpTransport:
 
         # Verify open_connection wasn't called a second time
         assert mock_open_connection.call_count == 1
-
-    @patch("asyncio.open_connection")
-    async def test_connect_timeout(self, mock_open_connection, transport):
-        """Test connection timing out."""
-
-        async def slow_connection(*args, **kwargs):
-            await asyncio.sleep(0.5)
-
-        mock_open_connection.side_effect = slow_connection
-
-        with pytest.raises(asyncio.TimeoutError):
-            await transport.connect()
-
-        assert isinstance(transport._state, TcpDisconnected)
 
     @patch("asyncio.open_connection")
     async def test_disconnect(

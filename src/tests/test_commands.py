@@ -134,8 +134,7 @@ class TestModeCommand:
     def test_success(self, mode):
         command = mode_command(mode)
 
-        _ = command.collector(f"OK")
-        result = command.collector(f"Mode {mode.value}")
+        result = command.collector(f"OK MODE {mode.value}")
         
         assert result.is_done
 
