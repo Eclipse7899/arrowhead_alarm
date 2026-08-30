@@ -47,7 +47,6 @@ class TcpTransport:
         port: int,
         encoding: str = DEF_ENCODING,
         delimiter: str = DEF_LINE_DELIMITER,
-        connect_timeout: float = 10.0,
     ) -> None:
         """Initialize the TCP transport.
 
@@ -56,13 +55,11 @@ class TcpTransport:
             port: Target TCP port.
             encoding: Character encoding to use for data transfer.
             delimiter: Line delimiter string.
-            connect_timeout: Socket connection timeout in seconds.
         """
         self.host = host
         self.port = port
         self.delimiter = delimiter
         self.encoding = encoding
-        self.connect_timeout = connect_timeout
 
         self._state: TcpState = TcpDisconnected()
         self.state_publisher: Publisher[TcpState] = Publisher()
@@ -85,10 +82,7 @@ class TcpTransport:
                 return
 
             _LOGGER.info("Connecting to %s:%s", self.host, self.port)
-            reader, writer = await asyncio.wait_for(
-                asyncio.open_connection(self.host, self.port),
-                timeout=self.connect_timeout,
-            )
+            reader, writer = await asyncio.open_connection(self.host, self.port)
             self._set_state(TcpConnected(reader, writer))
 
     async def disconnect(self) -> None:
