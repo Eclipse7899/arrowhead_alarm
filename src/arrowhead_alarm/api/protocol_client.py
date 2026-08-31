@@ -75,8 +75,8 @@ class ProtocolClient(ABC):
         await asyncio.wait_for(self._client.connect(), timeout=self._connection_timeout)
         await self._set_mode()
         await self.query_info()
-        await self.request_state()
         self._client.subscribe(self._handle_event)
+        await self.request_state()
 
     async def disconnect(self) -> None:
         """Disconnect from the alarm panel."""
