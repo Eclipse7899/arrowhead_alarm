@@ -13,6 +13,7 @@ from .const import (
     CMD_OUTPUT,
     CMD_OUTPUT_OFF,
     CMD_OUTPUT_ON,
+    CMD_STATUS,
     CMD_UNBYPASS,
     CMD_VERSION,
 )
@@ -101,6 +102,17 @@ def version_command() -> Command[Result[PanelInfo, ProtocolError]]:
     )
 
     payload = CMD_VERSION
+
+    return Command(payload, _get_command_collector(payload, response_parser))
+
+
+def status_command() -> Command[Result[None, ProtocolError]]:
+    """Create a command to query the panel status."""
+    response_parser = (
+        _get_cmd_result_pipeline(CMD_STATUS).bind(lambda _: Success(None)).unwrap()
+    )
+
+    payload = CMD_STATUS
 
     return Command(payload, _get_command_collector(payload, response_parser))
 

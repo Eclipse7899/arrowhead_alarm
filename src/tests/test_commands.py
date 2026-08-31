@@ -15,7 +15,7 @@ from arrowhead_alarm.protocol.commands import (
     output_state_command,
     set_output_command,
     unbypass_zone_command,
-    version_command,
+    version_command, status_command,
 )
 from arrowhead_alarm.protocol.models import ArmingMode, PanelInfo, ProtocolMode, VersionInfo
 from arrowhead_alarm.protocol.types import Success, Waiting, Result, Failure, Command
@@ -107,6 +107,32 @@ class TestVersionCommand:
     def test_malformed_response(self, response):
         command = version_command()
         result = command.collector(response)
+
+        assert result.is_done
+        assert_error(result.value)
+
+
+class TestStatusCommand:
+    def test_success(self):
+        command = status_command()
+
+        result = command.collector(f"OK STATUS")
+
+        assert result.is_done
+
+        assert_success(result.value, None)
+
+    def test_error_response(self):
+        command = status_command()
+
+        result = command.collector("ERR Invalid Command")
+
+        assert result.is_done
+        assert_error(result.value)
+
+    def test_malformed_response(self):
+        command = status_command()
+        result = command.collector("OK")
 
         assert result.is_done
         assert_error(result.value)

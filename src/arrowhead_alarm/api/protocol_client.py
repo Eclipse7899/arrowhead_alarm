@@ -14,7 +14,7 @@ from ..protocol.commands import (
     output_state_command,
     set_output_command,
     unbypass_zone_command,
-    version_command,
+    version_command, status_command,
 )
 from ..protocol.defaults import get_default_state
 from ..protocol.models import PanelInfo, PanelState, ProtocolMode
@@ -120,6 +120,17 @@ class ProtocolClient(ABC):
         if resp.is_ok:
             return resp.value
         raise resp.error
+
+    async def request_state(self) -> None:
+        """Request the current state of the panel."""
+        _LOGGER.info("Requesting state from the panel")
+        result = await self._send_command(status_command())
+        if result.is_ok:
+            return
+        else:
+            _LOGGER.error("Error requesting state: %s", result.error)
+            raise result.error
+
 
     async def output_on(self, output_number: int) -> None:
         """Turn on a specific output.

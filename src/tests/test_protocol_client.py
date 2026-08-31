@@ -246,6 +246,25 @@ async def test_query_version_success(
 
 
 @pytest.mark.asyncio
+async def test_query_status_success(
+    client: TestProtocolClient,
+    command_client: MagicMock,
+) -> None:
+    response = MagicMock()
+    command_client.request.return_value = successful_result(response)
+
+    with patch(
+        "arrowhead_alarm.api.protocol_client.status_command",
+        return_value="STATUS",
+    ) as status_command:
+        result = await client.request_state()
+
+    assert result is None
+    status_command.assert_called_once_with()
+    command_client.request.assert_awaited_once_with("STATUS")
+
+
+@pytest.mark.asyncio
 async def test_query_version_failure(
     client: TestProtocolClient,
     command_client: MagicMock,
