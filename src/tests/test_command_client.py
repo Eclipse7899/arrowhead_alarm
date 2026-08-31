@@ -118,13 +118,18 @@ async def test_disconnect(
     client: CommandClient,
     session: MagicMock,
 ) -> None:
-    read_worker = MagicMock()
+
+    async def worker():
+        await asyncio.sleep(100)
+
+    read_worker = asyncio.create_task(worker())
     client.state = ClientConnected(read_worker)
 
     await client.disconnect()
 
     session.disconnect.assert_awaited_once_with()
-    read_worker.cancel.assert_called_once_with()
+
+    assert read_worker.cancelled()
     assert isinstance(client.state, ClientDisconnected)
 
 
