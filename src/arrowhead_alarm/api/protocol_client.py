@@ -57,6 +57,7 @@ class ProtocolClient(ABC):
 
         self._state: PanelState = get_default_state()
         self._client = CommandClient(session)
+        self._version: PanelVersion | None = None
         self.state_publisher: Publisher[PanelState] = Publisher()
 
     @property
@@ -74,6 +75,7 @@ class ProtocolClient(ABC):
         """Connect the protocol client to the alarm panel."""
         await asyncio.wait_for(self._client.connect(), timeout=self._connection_timeout)
         await self._set_mode()
+        self._version = await self.query_version()
         self._client.subscribe(self._handle_event)
 
     async def disconnect(self) -> None:

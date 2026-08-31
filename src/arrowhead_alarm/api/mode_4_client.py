@@ -27,8 +27,8 @@ class Mode4Client(ProtocolClient):
         host: str,
         port: int,
         credentials: LoginCredentials | None,
-        command_timeout: float = 3.0,
-        connection_timeout: float = 5.0,
+        command_timeout: float = 5.0,
+        connection_timeout: float = 10.0,
     ) -> None:
         """Initialize the Mode 4 client.
 
