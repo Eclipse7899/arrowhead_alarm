@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch, call
 
 import pytest
 
@@ -140,15 +140,23 @@ async def test_start_connects_sets_mode_and_subscribes(
 ) -> None:
     command_client.request.return_value = successful_result()
 
-    with patch(
+    with (patch(
         "arrowhead_alarm.api.protocol_client.mode_command",
         return_value="MODE COMMAND",
-    ) as mode_command:
+    ) as mode_command,
+    patch(
+        "arrowhead_alarm.api.protocol_client.version_command",
+        return_value="VERSION COMMAND",
+    ) as version_command):
         await client.connect()
 
     command_client.connect.assert_awaited_once_with()
     mode_command.assert_called_once_with(ProtocolMode.MODE_1)
-    command_client.request.assert_awaited_once_with("MODE COMMAND")
+    version_command.assert_called_once_with()
+    assert command_client.request.await_args_list == [
+        call('MODE COMMAND'),
+        call('VERSION COMMAND')
+    ]
     command_client.subscribe.assert_called_once_with(client._handle_event)
 
 
