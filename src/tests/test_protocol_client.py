@@ -153,10 +153,8 @@ async def test_start_connects_sets_mode_and_subscribes(
     command_client.connect.assert_awaited_once_with()
     mode_command.assert_called_once_with(ProtocolMode.MODE_1)
     version_command.assert_called_once_with()
-    assert command_client.request.await_args_list == [
-        call('MODE COMMAND'),
-        call('VERSION COMMAND')
-    ]
+    assert 'MODE COMMAND' in [call[0][0] for call in command_client.request.call_args_list]
+    assert 'VERSION COMMAND' in [call[0][0] for call in command_client.request.call_args_list]
     command_client.subscribe.assert_called_once_with(client._handle_event)
 
 
@@ -876,14 +874,12 @@ async def test_client_initializes_version_on_connect(
     client: TestProtocolClient,
     command_client: MagicMock,
 ) -> None:
-    version = PanelInfo(
+    info = PanelInfo(
         model="ECi",
         firmware_version=VersionInfo(10, 3, 52),
         serial_number="WR5SPLS1",
     )
-    command_client.request.return_value = successful_result()
-
-    client.query_info = AsyncMock(return_value=version)
+    command_client.request.return_value = successful_result(info)
 
     with patch(
         "arrowhead_alarm.api.protocol_client.mode_command",
@@ -894,5 +890,5 @@ async def test_client_initializes_version_on_connect(
     ):
         await client.connect()
 
-    client.query_info.assert_awaited_once_with()
-    assert client.version is version
+    assert client.state.info is not None
+    assert client.state.info is info

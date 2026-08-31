@@ -3,7 +3,6 @@
 import asyncio
 import logging
 from abc import ABC
-from dataclasses import replace
 from typing import Callable, TypeVar
 
 from arrowhead_alarm.protocol.types import Command
@@ -13,8 +12,9 @@ from ..protocol.commands import (
     mode_command,
     output_state_command,
     set_output_command,
+    status_command,
     unbypass_zone_command,
-    version_command, status_command,
+    version_command,
 )
 from ..protocol.defaults import get_default_state
 from ..protocol.models import PanelInfo, PanelState, ProtocolMode
@@ -57,7 +57,6 @@ class ProtocolClient(ABC):
 
         self._state: PanelState = get_default_state()
         self._client = CommandClient(session)
-        self.version: PanelInfo | None = None
         self.state_publisher: Publisher[PanelState] = Publisher()
 
     @property
@@ -75,7 +74,8 @@ class ProtocolClient(ABC):
         """Connect the protocol client to the alarm panel."""
         await asyncio.wait_for(self._client.connect(), timeout=self._connection_timeout)
         await self._set_mode()
-        self.version = await self.query_info()
+        await self.query_info()
+        await self.request_state()
         self._client.subscribe(self._handle_event)
 
     async def disconnect(self) -> None:
@@ -116,10 +116,14 @@ class ProtocolClient(ABC):
         Raises:
             Exception: If querying the info fails.
         """
+        _LOGGER.info("Querying panel info")
         resp = await self._send_command(version_command())
         if resp.is_ok:
+            self._update_state(lambda state: state.set_info(resp.value))
             return resp.value
-        raise resp.error
+        else:
+            _LOGGER.error("Error querying panel info: %s", resp.error)
+            raise resp.error
 
     async def request_state(self) -> None:
         """Request the current state of the panel."""
@@ -151,13 +155,7 @@ class ProtocolClient(ABC):
         if result.is_ok:
             _LOGGER.info("Output %d turned on", output_number)
             self._update_state(
-                lambda state: replace(
-                    state,
-                    outputs={
-                        **state.outputs,
-                        output_number: replace(state.outputs[output_number], on=True),
-                    },
-                )
+                lambda state: state.set_output_on(output_number, True)
             )
         else:
             _LOGGER.error("Error turning on output %d: %s", output_number, result.error)
@@ -181,7 +179,9 @@ class ProtocolClient(ABC):
         result = await self._send_command(set_output_command(output_number, False))
         if result.is_ok:
             _LOGGER.info("Output %d turned off", output_number)
-            self._state.outputs[output_number].on = False
+            self._update_state(
+                lambda state: state.set_output_on(output_number, False)
+            )
         else:
             _LOGGER.error("Error turning off output %d: %s", output_number, result.error)
             raise result.error
@@ -207,7 +207,9 @@ class ProtocolClient(ABC):
         result = await self._send_command(output_state_command(output_number))
         if result.is_ok:
             _LOGGER.info("Output %d state queried", output_number)
-            self._state.outputs[output_number].on = result.value
+            self._update_state(
+                lambda state: state.set_output_on(output_number, result.value)
+            )
             return result.value
         _LOGGER.error("Error querying output %d: %s", output_number, result.error)
         raise result.error
@@ -230,7 +232,9 @@ class ProtocolClient(ABC):
         result = await self._send_command(bypass_zone_command(zone_number))
         if result.is_ok:
             _LOGGER.info("Zone %d bypassed", zone_number)
-            self._state.zones[zone_number].bypassed = True
+            self._update_state(
+                lambda state: state.set_zone_bypassed(zone_number, True)
+            )
         else:
             _LOGGER.error("Error bypassing zone %d: %s", zone_number, result.error)
             raise result.error
@@ -252,7 +256,9 @@ class ProtocolClient(ABC):
         result = await self._send_command(unbypass_zone_command(zone_number))
         if result.is_ok:
             _LOGGER.info("Zone %d unbypassed", zone_number)
-            self._state.zones[zone_number].bypassed = False
+            self._update_state(
+                lambda state: state.set_zone_bypassed(zone_number, False)
+            )
         else:
             _LOGGER.error("Error unbypassing zone %d: %s", zone_number, result.error)
             raise result.error
