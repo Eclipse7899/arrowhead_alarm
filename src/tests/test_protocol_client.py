@@ -4,7 +4,7 @@ import pytest
 
 from arrowhead_alarm.api.protocol_client import ProtocolClient
 from arrowhead_alarm.protocol.defaults import DEFAULT_MAX_OUTPUTS, DEFAULT_MAX_ZONES
-from arrowhead_alarm.protocol.models import PanelState, ProtocolMode, PanelVersion, VersionInfo
+from arrowhead_alarm.protocol.models import PanelState, ProtocolMode, PanelInfo, VersionInfo
 from arrowhead_alarm.protocol.types import Success, Failure
 from arrowhead_alarm.util import LoginCredentials
 
@@ -238,7 +238,7 @@ async def test_query_version_success(
         "arrowhead_alarm.api.protocol_client.version_command",
         return_value="VERSION",
     ) as version_command:
-        result = await client.query_version()
+        result = await client.query_info()
 
     assert result is version
     version_command.assert_called_once_with()
@@ -250,15 +250,15 @@ async def test_query_version_failure(
     client: TestProtocolClient,
     command_client: MagicMock,
 ) -> None:
-    error = RuntimeError("version failed")
+    error = RuntimeError("info failed")
     command_client.request.return_value = failed_result(error)
 
     with patch(
         "arrowhead_alarm.api.protocol_client.version_command",
         return_value="VERSION",
     ):
-        with pytest.raises(RuntimeError, match="version failed") as exc_info:
-            await client.query_version()
+        with pytest.raises(RuntimeError, match="info failed") as exc_info:
+            await client.query_info()
 
     assert exc_info.value is error
 
@@ -686,14 +686,14 @@ async def test_unbypass_zone_rejects_invalid_zone_number(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "version",
+    "info",
     [
-        PanelVersion(
+        PanelInfo(
             model="ECi",
             firmware_version=VersionInfo(10, 3, 52),
             serial_number="WR5SPLS1",
         ),
-        PanelVersion(
+        PanelInfo(
             model="MODEL",
             firmware_version=VersionInfo(1, 2, 3),
             serial_number="ABC123",
@@ -703,17 +703,17 @@ async def test_unbypass_zone_rejects_invalid_zone_number(
 async def test_query_version_returns_version(
     client: TestProtocolClient,
     command_client: MagicMock,
-    version: PanelVersion,
+    info: PanelInfo,
 ) -> None:
-    command_client.request.return_value = successful_result(version)
+    command_client.request.return_value = successful_result(info)
 
     with patch(
         "arrowhead_alarm.api.protocol_client.version_command",
         return_value="VERSION",
     ) as version_command:
-        result = await client.query_version()
+        result = await client.query_info()
 
-    assert result is version
+    assert result is info
     version_command.assert_called_once_with()
     command_client.request.assert_awaited_once_with("VERSION")
 
@@ -723,15 +723,15 @@ async def test_query_version_raises_error_response(
     client: TestProtocolClient,
     command_client: MagicMock,
 ) -> None:
-    error = ValueError("version request failed")
+    error = ValueError("info request failed")
     command_client.request.return_value = failed_result(error)
 
     with patch(
         "arrowhead_alarm.api.protocol_client.version_command",
         return_value="VERSION",
     ) as version_command:
-        with pytest.raises(ValueError, match="version request failed") as exc_info:
-            await client.query_version()
+        with pytest.raises(ValueError, match="info request failed") as exc_info:
+            await client.query_info()
 
     assert exc_info.value is error
     version_command.assert_called_once_with()
@@ -857,14 +857,14 @@ async def test_client_initializes_version_on_connect(
     client: TestProtocolClient,
     command_client: MagicMock,
 ) -> None:
-    version = PanelVersion(
+    version = PanelInfo(
         model="ECi",
         firmware_version=VersionInfo(10, 3, 52),
         serial_number="WR5SPLS1",
     )
     command_client.request.return_value = successful_result()
 
-    client.query_version = AsyncMock(return_value=version)
+    client.query_info = AsyncMock(return_value=version)
 
     with patch(
         "arrowhead_alarm.api.protocol_client.mode_command",
@@ -875,5 +875,5 @@ async def test_client_initializes_version_on_connect(
     ):
         await client.connect()
 
-    client.query_version.assert_awaited_once_with()
+    client.query_info.assert_awaited_once_with()
     assert client.version is version

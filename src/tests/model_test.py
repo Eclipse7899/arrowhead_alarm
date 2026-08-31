@@ -12,13 +12,13 @@ from arrowhead_alarm.protocol.models import (
     OkResponse,
     Output,
     PanelState,
-    PanelVersion,
+    PanelInfo,
     ProtocolMode,
     StatusFlags,
     StatusResponse,
     UserPin,
     VersionInfo,
-    Zone, STATUS_CODE, NUMBERED_STATUS, EXPANDER_STATUS, USER_STATUS, TIMESTAMPED_STATUS,
+    Zone, CODE_STATUS, NUMBERED_STATUS, EXPANDER_STATUS, USER_STATUS, TIMESTAMPED_STATUS,
 )
 
 
@@ -30,47 +30,45 @@ def version() -> VersionInfo:
 @pytest.fixture
 def panel_state() -> PanelState:
     area = Area(
-        area_number=1,
+        number=1,
         state=AlarmState.DISARMED,
         ready_to_arm=True,
     )
 
     zone = Zone(
-        zone_number=1,
+        number=1,
         supervise_alarm=False,
         trouble_alarm=False,
         bypassed=False,
         alarm=False,
         radio_battery_low=False,
-        zone_closed=True,
+        closed=True,
         sensor_watch_alarm=False,
     )
 
     expander = Expander(
-        expander_id=1,
-        tamper_alarm_triggered=False,
+        number=1,
+        tamper_fault=True,
         mains_fault=False,
         battery_fault=False,
         fuse_fault=False,
     )
 
     output = Output(
-        output_number=1,
+        number=1,
         on=False,
     )
 
     return PanelState(
+        info=None,
         ready_to_arm=True,
         battery_fault=False,
         mains_fault=False,
-        tamper_alarm_triggered=False,
-        line_fault=False,
         dialer_fault=False,
         dialer_line_fault=False,
         fuse_fault=False,
+        tamper_fault=True,
         monitoring_station_active=False,
-        dialer_active=False,
-        code_tamper=False,
         receiver_fault=None,
         pendant_battery_fault=None,
         rf_battery_low=None,
@@ -117,7 +115,7 @@ def test_status_flag_combinations() -> None:
 
 
 def test_status_type_constants() -> None:
-    assert STATUS_CODE == StatusFlags.CODE
+    assert CODE_STATUS == StatusFlags.CODE
     assert NUMBERED_STATUS == (
         StatusFlags.CODE | StatusFlags.NUMBER
     )
@@ -343,7 +341,7 @@ def test_ok_response() -> None:
     [
         (
             Area(
-                area_number=1,
+                number=1,
                 state=AlarmState.DISARMED,
                 ready_to_arm=True,
             ),
@@ -351,7 +349,7 @@ def test_ok_response() -> None:
         ),
         (
             Area(
-                area_number=5,
+                number=5,
                 state=AlarmState.ARMED_STAY,
                 ready_to_arm=False,
             ),
@@ -367,7 +365,7 @@ def test_area_set_state(
 
     assert result is not initial
     assert result.state is expected
-    assert result.area_number == initial.area_number
+    assert result.number == initial.number
     assert result.ready_to_arm == initial.ready_to_arm
     assert initial.state != expected
 
@@ -375,7 +373,7 @@ def test_area_set_state(
 @pytest.mark.parametrize("value", [True, False])
 def test_area_set_ready_to_arm(value: bool) -> None:
     initial = Area(
-        area_number=1,
+        number=1,
         state=AlarmState.DISARMED,
         ready_to_arm=not value,
     )
@@ -384,20 +382,20 @@ def test_area_set_ready_to_arm(value: bool) -> None:
 
     assert result is not initial
     assert result.ready_to_arm is value
-    assert result.area_number == initial.area_number
+    assert result.number == initial.number
     assert result.state is initial.state
 
 
 @pytest.fixture
 def zone() -> Zone:
     return Zone(
-        zone_number=1,
+        number=1,
         supervise_alarm=False,
         trouble_alarm=False,
         bypassed=False,
         alarm=False,
         radio_battery_low=False,
-        zone_closed=True,
+        closed=True,
         sensor_watch_alarm=False,
     )
 
@@ -467,7 +465,7 @@ def test_zone_set_closed(zone: Zone, value: bool) -> None:
     result = zone.set_closed(value)
 
     assert result is not zone
-    assert result.zone_closed is value
+    assert result.closed is value
 
 
 @pytest.mark.parametrize(
@@ -484,8 +482,8 @@ def test_zone_set_sensor_watch_alarm(zone: Zone, value: bool) -> None:
 @pytest.fixture
 def expander() -> Expander:
     return Expander(
-        expander_id=1,
-        tamper_alarm_triggered=False,
+        number=1,
+        tamper_fault=True,
         mains_fault=False,
         battery_fault=False,
         fuse_fault=False,
@@ -497,10 +495,10 @@ def test_expander_set_tamper_alarm_triggered(
     expander: Expander,
     value: bool,
 ) -> None:
-    result = expander.set_tamper_alarm_triggered(value)
+    result = expander.set_tamper_fault(value)
 
     assert result is not expander
-    assert result.tamper_alarm_triggered is value
+    assert result.tamper_fault is value
 
 
 @pytest.mark.parametrize("value", [True, False])
@@ -539,7 +537,7 @@ def test_expander_set_fuse_fault(
 @pytest.fixture
 def output() -> Output:
     return Output(
-        output_number=1,
+        number=1,
         on=False,
     )
 
@@ -553,7 +551,7 @@ def test_output_set_on(
 
     assert result is not output
     assert result.on is value
-    assert result.output_number == output.output_number
+    assert result.number == output.number
 
 
 @pytest.mark.parametrize(
@@ -562,14 +560,11 @@ def test_output_set_on(
         ("set_ready_to_arm", False),
         ("set_battery_fault", True),
         ("set_mains_fault", True),
-        ("set_tamper_alarm_triggered", True),
-        ("set_line_fault", True),
+        ("set_tamper_fault", False),
         ("set_dialer_fault", True),
         ("set_dialer_line_fault", True),
         ("set_fuse_fault", True),
         ("set_monitoring_station_active", True),
-        ("set_dialer_active", True),
-        ("set_code_tamper", True),
         ("set_receiver_fault", True),
         ("set_pendant_battery_fault", True),
         ("set_rf_battery_low", True),
@@ -673,7 +668,7 @@ def test_panel_state_set_area_ready(
         ("set_zone_alarm", "alarm", True),
         ("set_zone_radio_battery_low", "radio_battery_low", True),
         ("set_zone_bypassed", "bypassed", True),
-        ("set_zone_closed", "zone_closed", False),
+        ("set_zone_closed", "closed", False),
         ("set_zone_sensor_watch_alarm", "sensor_watch_alarm", True),
         ("set_zone_trouble_alarm", "trouble_alarm", True),
         ("set_zone_supervise_alarm", "supervise_alarm", True),
@@ -715,10 +710,7 @@ def test_panel_state_set_output_on(
         ("set_zone_expander_battery_fault", "battery_fault"),
         ("set_zone_expander_mains_fault", "mains_fault"),
         ("set_zone_expander_fuse_fault", "fuse_fault"),
-        (
-            "set_zone_expander_tamper_alarm_triggered",
-            "tamper_alarm_triggered",
-        ),
+        ("set_zone_expander_tamper_fault", "tamper_fault"),
     ],
 )
 @pytest.mark.parametrize("value", [True, False])
@@ -732,7 +724,6 @@ def test_panel_state_zone_expander_setters(
 
     assert result is not panel_state
     assert getattr(result.zone_expanders[1], field_name) is value
-    assert getattr(panel_state.zone_expanders[1], field_name) is False
 
 
 @pytest.mark.parametrize(
@@ -744,10 +735,7 @@ def test_panel_state_zone_expander_setters(
         ("set_output_expander_battery_fault", "battery_fault"),
         ("set_output_expander_mains_fault", "mains_fault"),
         ("set_output_expander_fuse_fault", "fuse_fault"),
-        (
-            "set_output_expander_tamper_alarm_triggered",
-            "tamper_alarm_triggered",
-        ),
+        ("set_output_expander_tamper_fault","tamper_fault"),
     ],
 )
 @pytest.mark.parametrize("value", [True, False])
@@ -773,8 +761,8 @@ def test_panel_state_output_expander_setters(
         ("set_prox_expander_mains_fault", "mains_fault"),
         ("set_prox_expander_fuse_fault", "fuse_fault"),
         (
-            "set_prox_expander_tamper_alarm_triggered",
-            "tamper_alarm_triggered",
+            "set_prox_expander_tamper_fault",
+            "tamper_fault",
         ),
     ],
 )
@@ -811,21 +799,21 @@ def test_panel_state_prox_expander_setters(
         ("set_zone_expander_mains_fault", "zone_expanders"),
         ("set_zone_expander_fuse_fault", "zone_expanders"),
         (
-            "set_zone_expander_tamper_alarm_triggered",
+            "set_zone_expander_tamper_fault",
             "zone_expanders",
         ),
         ("set_output_expander_battery_fault", "output_expanders"),
         ("set_output_expander_mains_fault", "output_expanders"),
         ("set_output_expander_fuse_fault", "output_expanders"),
         (
-            "set_output_expander_tamper_alarm_triggered",
+            "set_output_expander_tamper_fault",
             "output_expanders",
         ),
         ("set_prox_expander_battery_fault", "prox_expanders"),
         ("set_prox_expander_mains_fault", "prox_expanders"),
         ("set_prox_expander_fuse_fault", "prox_expanders"),
         (
-            "set_prox_expander_tamper_alarm_triggered",
+            "set_prox_expander_tamper_fault",
             "prox_expanders",
         ),
     ],
@@ -855,23 +843,21 @@ def test_panel_state_setters_ignore_unknown_identifiers(
 
 def test_panel_state_set_area_state_preserves_other_areas() -> None:
     state = Area(
-        area_number=2,
+        number=2,
         state=AlarmState.DISARMED,
         ready_to_arm=True,
     )
 
     panel = PanelState(
+        info=None,
         ready_to_arm=True,
         battery_fault=False,
         mains_fault=False,
-        tamper_alarm_triggered=False,
-        line_fault=False,
+        tamper_fault=True,
         dialer_fault=False,
         dialer_line_fault=False,
         fuse_fault=False,
         monitoring_station_active=False,
-        dialer_active=False,
-        code_tamper=False,
         receiver_fault=None,
         pendant_battery_fault=None,
         rf_battery_low=None,
@@ -880,7 +866,7 @@ def test_panel_state_set_area_state_preserves_other_areas() -> None:
         outputs={},
         areas={
             1: Area(
-                area_number=1,
+                number=1,
                 state=AlarmState.DISARMED,
                 ready_to_arm=True,
             ),
@@ -902,42 +888,40 @@ def test_panel_state_set_area_state_preserves_other_areas() -> None:
 
 def test_panel_state_set_zone_alarm_preserves_other_zones() -> None:
     zone2 = Zone(
-        zone_number=2,
+        number=2,
         supervise_alarm=False,
         trouble_alarm=False,
         bypassed=False,
         alarm=False,
         radio_battery_low=False,
-        zone_closed=True,
+        closed=True,
         sensor_watch_alarm=False,
     )
 
     panel = replace(
         PanelState(
+            info=None,
             ready_to_arm=True,
             battery_fault=False,
             mains_fault=False,
-            tamper_alarm_triggered=False,
-            line_fault=False,
+            tamper_fault=True,
             dialer_fault=False,
             dialer_line_fault=False,
             fuse_fault=False,
             monitoring_station_active=False,
-            dialer_active=False,
-            code_tamper=False,
             receiver_fault=None,
             pendant_battery_fault=None,
             rf_battery_low=None,
             sensor_watch_alarm=None,
             zones={
                 1: Zone(
-                    zone_number=1,
+                    number=1,
                     supervise_alarm=False,
                     trouble_alarm=False,
                     bypassed=False,
                     alarm=False,
                     radio_battery_low=False,
-                    zone_closed=True,
+                    closed=True,
                     sensor_watch_alarm=False,
                 ),
                 2: zone2,
@@ -1117,7 +1101,7 @@ def test_status_response_flags_include_all_fields() -> None:
 
 
 def test_panel_version() -> None:
-    version = PanelVersion(
+    version = PanelInfo(
         model="ECi",
         firmware_version=VersionInfo(10, 3, 52),
         serial_number="WR5SPLS1",

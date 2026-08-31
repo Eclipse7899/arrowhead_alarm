@@ -9,8 +9,8 @@ from .messages import get_status_operation
 from .models import (
     ErrorResponse,
     OkResponse,
+    PanelInfo,
     PanelState,
-    PanelVersion,
     ProtocolMode,
     Response,
     StatusResponse,
@@ -56,8 +56,8 @@ def cmd_result_transformer(
             return Failure(ProtocolErrorCode(error_code))
 
 
-def create_version_transformer(data: str) -> Result[PanelVersion, ProtocolErrorCode]:
-    """Create a transformer that parses a version response into a PanelVersion object."""
+def create_version_transformer(data: str) -> Result[PanelInfo, ProtocolErrorCode]:
+    """Create a transformer that parses a version response into a PanelInfo object."""
     new = data.strip().strip('"')
     return parse_panel_version_string(new).map_error(lambda _: ProtocolErrorCode.INVALID_RESPONSE)
 

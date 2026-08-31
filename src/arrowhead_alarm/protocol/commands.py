@@ -20,7 +20,7 @@ from .exceptions import ProtocolError, ProtocolErrorCode
 from .models import (
     ArmingMode,
     CommandPayload,
-    PanelVersion,
+    PanelInfo,
     ProtocolMode,
 )
 from .transformers import (
@@ -85,28 +85,25 @@ def _get_cmd_result_pipeline(
 
 
 def _get_int_command(keyword: str, payload: str) -> Command[Result[int, ProtocolError]]:
-    response_parser = (
-        _get_cmd_result_pipeline(keyword).bind(int_response_transformer).unwrap()
-    )
+    response_parser = _get_cmd_result_pipeline(keyword).bind(int_response_transformer).unwrap()
 
     return Command(payload, _get_command_collector(payload, response_parser))
 
 
-def version_command() -> Command[Result[PanelVersion, ProtocolError]]:
-    """Create a command to query the panel version.
+def version_command() -> Command[Result[PanelInfo, ProtocolError]]:
+    """Create a command to query the panel info.
 
     Returns:
-        A command object that resolves to the panel version or a protocol error.
+        A command object that resolves to the panel info or a protocol error.
     """
     response_parser = (
-        _get_cmd_result_pipeline(CMD_VERSION)
-        .bind(create_version_transformer)
-        .unwrap()
+        _get_cmd_result_pipeline(CMD_VERSION).bind(create_version_transformer).unwrap()
     )
 
     payload = CMD_VERSION
 
     return Command(payload, _get_command_collector(payload, response_parser))
+
 
 def mode_command(mode: ProtocolMode) -> Command[Result[ProtocolMode, ProtocolError]]:
     """Create a command to set the protocol mode.
@@ -146,11 +143,7 @@ def arm_button_command(mode: ArmingMode) -> Command[Result[None, ProtocolError]]
 
     payload = CommandPayload(keyword, []).build()
 
-    evaluator = (
-        _get_cmd_result_pipeline(keyword)
-         .bind(lambda _: Success(None))
-         .unwrap()
-    )
+    evaluator = _get_cmd_result_pipeline(keyword).bind(lambda _: Success(None)).unwrap()
 
     return Command(payload, _get_command_collector(payload, evaluator))
 
@@ -179,9 +172,7 @@ def arm_user_command(
     return _get_int_command(keyword, payload)
 
 
-def arm_no_pin_command(
-    user: int, mode: ArmingMode
-) -> Command[Result[int, ProtocolError]]:
+def arm_no_pin_command(user: int, mode: ArmingMode) -> Command[Result[int, ProtocolError]]:
     """Create a command to arm the system as a user without PIN.
 
     Args:
@@ -201,9 +192,7 @@ def arm_no_pin_command(
     return _get_int_command(keyword, payload)
 
 
-def arm_area_command_mode_2(
-    area: int, mode: ArmingMode
-) -> Command[Result[int, ProtocolError]]:
+def arm_area_command_mode_2(area: int, mode: ArmingMode) -> Command[Result[int, ProtocolError]]:
     """Create a command to arm an area in Mode 2.
 
     Args:
@@ -224,9 +213,7 @@ def arm_area_command_mode_2(
     return _get_int_command(keyword, payload)
 
 
-def arm_area_command_mode_4(
-    area: int, mode: ArmingMode
-) -> Command[Result[int, ProtocolError]]:
+def arm_area_command_mode_4(area: int, mode: ArmingMode) -> Command[Result[int, ProtocolError]]:
     """Create a command to arm an area in Mode 4.
 
     Args:
@@ -318,6 +305,7 @@ def set_output_command(output: int, on: bool) -> Command[Result[int, ProtocolErr
     payload = CommandPayload(keyword, [output]).build()
 
     return _get_int_command(keyword, payload)
+
 
 def output_state_command(output: int) -> Command[Result[bool, ProtocolError]]:
     """Create a command to query the state of an output.

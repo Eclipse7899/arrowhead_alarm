@@ -3,9 +3,9 @@
 from typing import Callable, Final
 
 from .models import (
+    CODE_STATUS,
     EXPANDER_STATUS,
     NUMBERED_STATUS,
-    STATUS_CODE,
     TIMESTAMPED_STATUS,
     USER_STATUS,
     AlarmState,
@@ -68,22 +68,22 @@ EXPANDER_CODE_DISPATCHER: Final[dict[tuple[str, str], Callable[[int, PanelState]
     ("FF", "PX"): lambda expander_number, panel: panel.set_prox_expander_fuse_fault(
         expander_number, True
     ),
-    ("TR", "PX"): lambda expander_number, panel: panel.set_prox_expander_tamper_alarm_triggered(
+    ("TR", "PX"): lambda expander_number, panel: panel.set_prox_expander_tamper_fault(
         expander_number, False
     ),
-    ("TR", "ZX"): lambda expander_number, panel: panel.set_zone_expander_tamper_alarm_triggered(
+    ("TR", "ZX"): lambda expander_number, panel: panel.set_zone_expander_tamper_fault(
         expander_number, False
     ),
-    ("TR", "OX"): lambda expander_number, panel: panel.set_output_expander_tamper_alarm_triggered(
+    ("TR", "OX"): lambda expander_number, panel: panel.set_output_expander_tamper_fault(
         expander_number, False
     ),
-    ("TA", "PX"): lambda expander_number, panel: panel.set_prox_expander_tamper_alarm_triggered(
+    ("TA", "PX"): lambda expander_number, panel: panel.set_prox_expander_tamper_fault(
         expander_number, True
     ),
-    ("TA", "ZX"): lambda expander_number, panel: panel.set_zone_expander_tamper_alarm_triggered(
+    ("TA", "ZX"): lambda expander_number, panel: panel.set_zone_expander_tamper_fault(
         expander_number, True
     ),
-    ("TA", "OX"): lambda expander_number, panel: panel.set_output_expander_tamper_alarm_triggered(
+    ("TA", "OX"): lambda expander_number, panel: panel.set_output_expander_tamper_fault(
         expander_number, True
     ),
 }
@@ -251,8 +251,8 @@ STATUS_CODE_DISPATCHER: Final[dict[str, Callable[[PanelState], PanelState]]] = {
     "LR": lambda panel: panel.set_dialer_line_fault(False),
     "MF": lambda panel: panel.set_mains_fault(True),
     "MR": lambda panel: panel.set_mains_fault(False),
-    "TA": lambda panel: panel.set_tamper_alarm_triggered(True),
-    "TR": lambda panel: panel.set_tamper_alarm_triggered(False),
+    "TA": lambda panel: panel.set_tamper_fault(True),
+    "TR": lambda panel: panel.set_tamper_fault(False),
     "FF": lambda panel: panel.set_fuse_fault(True),
     "FR": lambda panel: panel.set_fuse_fault(False),
     "RIF": lambda panel: panel.set_receiver_fault(True),
@@ -281,7 +281,7 @@ Status = None
 STATUS_TYPE_DISPATCHER: Final[
     dict[int, Callable[[StatusResponse], Callable[[PanelState], PanelState]]]
 ] = {
-    STATUS_CODE: get_status_code_operation,
+    CODE_STATUS: get_status_code_operation,
     NUMBERED_STATUS: get_numbered_status_operation,
     EXPANDER_STATUS: get_expander_status_operation,
     USER_STATUS: get_user_status_operation,

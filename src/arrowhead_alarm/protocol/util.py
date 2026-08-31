@@ -18,7 +18,7 @@ from .exceptions import (
 from .models import (
     ErrorResponse,
     OkResponse,
-    PanelVersion,
+    PanelInfo,
     Response,
     StatusResponse,
     VersionInfo,
@@ -137,13 +137,13 @@ version_regex = re.compile(
     r"^([A-Za-z0-9-]+)\s+F/?W\s+Ver\.\s+(\d+)\.(\d+)\.(\d+)\s+\(([^)]+)\)$"
 )
 
-def parse_panel_version_string(version_resp: str) -> Result[PanelVersion, ValueError]:
-    """Parse the version response returned by the panel.
+def parse_panel_version_string(version_resp: str) -> Result[PanelInfo, ValueError]:
+    """Parse the info response returned by the panel.
 
     Args:
         version_resp: Version response string.
 
-    Returns: PanelVersion object representing the parsed version information.
+    Returns: PanelInfo object representing the parsed info information.
 
     """
     match = version_regex.match(version_resp.strip())
@@ -157,7 +157,7 @@ def parse_panel_version_string(version_resp: str) -> Result[PanelVersion, ValueE
     serial_number = match.group(5)
 
     return Success(
-        PanelVersion(
+        PanelInfo(
             model=model,
             firmware_version=VersionInfo(major, minor, patch),
             serial_number=serial_number,

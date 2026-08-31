@@ -15,7 +15,7 @@ ZONE_EXPANDER_COUNT = 32
 OUTPUT_EXPANDER_COUNT = 8
 PROX_EXPANDER_COUNT = 32
 
-MINIMUM_MODE_4_PANEL_VERSION = VersionInfo(major_version=10, minor_version=3, patch_version=50)
+MINIMUM_MODE_4_PANEL_VERSION = VersionInfo(major=10, minor=3, patch=50)
 
 
 def get_default_zones() -> Dict[int, Zone]:
@@ -26,13 +26,13 @@ def get_default_zones() -> Dict[int, Zone]:
     """
     return {
         i: Zone(
-            zone_number=i,
+            number=i,
             supervise_alarm=False,
             bypassed=False,
             trouble_alarm=False,
             alarm=False,
             radio_battery_low=False,
-            zone_closed=True,
+            closed=True,
             sensor_watch_alarm=False,
         )
         for i in range(1, DEFAULT_MAX_ZONES + 1)
@@ -46,7 +46,7 @@ def get_default_areas() -> Dict[int, Area]:
         A dictionary mapping area numbers to default Area objects.
     """
     return {
-        i: Area(area_number=i, state=AlarmState.DISARMED, ready_to_arm=True)
+        i: Area(number=i, state=AlarmState.DISARMED, ready_to_arm=True)
         for i in range(1, DEFAULT_MAX_AREAS + 1)
     }
 
@@ -62,8 +62,8 @@ def get_expanders(count: int) -> Dict[int, Expander]:
     """
     return {
         i: Expander(
-            expander_id=i,
-            tamper_alarm_triggered=False,
+            number=i,
+            tamper_fault=False,
             mains_fault=False,
             battery_fault=False,
             fuse_fault=False,
@@ -78,27 +78,25 @@ def get_default_outputs() -> Dict[int, Output]:
     Returns:
         A dictionary mapping output numbers to default Output objects.
     """
-    return {i: Output(output_number=i, on=False) for i in range(1, DEFAULT_MAX_OUTPUTS + 1)}
+    return {i: Output(number=i, on=False) for i in range(1, DEFAULT_MAX_OUTPUTS + 1)}
 
 
 def get_default_state() -> PanelState:
     """Generate the default panel state.
 
     Returns:
-        A PanelState object initialized with default values.
+        A PanelState initialized with default values.
     """
     return PanelState(
+        info=None,
         ready_to_arm=False,
         battery_fault=False,
         mains_fault=False,
-        tamper_alarm_triggered=False,
-        line_fault=False,
+        tamper_fault=False,
         dialer_fault=False,
         dialer_line_fault=False,
         fuse_fault=False,
         monitoring_station_active=False,
-        dialer_active=False,
-        code_tamper=False,
         receiver_fault=None,
         pendant_battery_fault=None,
         rf_battery_low=None,

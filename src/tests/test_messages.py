@@ -8,7 +8,7 @@ from arrowhead_alarm.protocol.messages import (
     EXPANDER_CODE_DISPATCHER,
     EXPANDER_STATUS,
     NUMBERED_STATUS,
-    STATUS_CODE,
+    CODE_STATUS,
     STATUS_TYPE_DISPATCHER,
     TIMESTAMPED_STATUS,
     USER_STATUS,
@@ -60,8 +60,8 @@ def panel():
         ("LR", "set_dialer_line_fault", False),
         ("MF", "set_mains_fault", True),
         ("MR", "set_mains_fault", False),
-        ("TA", "set_tamper_alarm_triggered", True),
-        ("TR", "set_tamper_alarm_triggered", False),
+        ("TA", "set_tamper_fault", True),
+        ("TR", "set_tamper_fault", False),
         ("FF", "set_fuse_fault", True),
         ("FR", "set_fuse_fault", False),
         ("RIF", "set_receiver_fault", True),
@@ -132,12 +132,12 @@ def test_get_status_code_operation_rejects_unsupported_codes(code):
         ("FF", "OX", "set_output_expander_fuse_fault", 16, True),
         ("FF", "ZX", "set_zone_expander_fuse_fault", 17, True),
         ("FF", "PX", "set_prox_expander_fuse_fault", 18, True),
-        ("TR", "PX", "set_prox_expander_tamper_alarm_triggered", 19, False),
-        ("TR", "ZX", "set_zone_expander_tamper_alarm_triggered", 20, False),
-        ("TR", "OX", "set_output_expander_tamper_alarm_triggered", 21, False),
-        ("TA", "PX", "set_prox_expander_tamper_alarm_triggered", 22, True),
-        ("TA", "ZX", "set_zone_expander_tamper_alarm_triggered", 23, True),
-        ("TA", "OX", "set_output_expander_tamper_alarm_triggered", 24, True),
+        ("TR", "PX", "set_prox_expander_tamper_fault", 19, False),
+        ("TR", "ZX", "set_zone_expander_tamper_fault", 20, False),
+        ("TR", "OX", "set_output_expander_tamper_fault", 21, False),
+        ("TA", "PX", "set_prox_expander_tamper_fault", 22, True),
+        ("TA", "ZX", "set_zone_expander_tamper_fault", 23, True),
+        ("TA", "OX", "set_output_expander_tamper_fault", 24, True),
     ],
 )
 def test_get_expander_status_operation(
@@ -505,7 +505,7 @@ def test_get_timestamped_status_operation_requires_timestamp(code):
 @pytest.mark.parametrize(
     ("flags", "status"),
     [
-        (STATUS_CODE, make_status("RO")),
+        (CODE_STATUS, make_status("RO")),
         (NUMBERED_STATUS, make_status("A", number=1)),
         (
             EXPANDER_STATUS,
@@ -548,7 +548,7 @@ OperationGetter = Callable[
 @pytest.mark.parametrize(
     ("flags", "getter"),
     [
-        (STATUS_CODE, get_status_code_operation),
+        (CODE_STATUS, get_status_code_operation),
         (NUMBERED_STATUS, get_numbered_status_operation),
         (EXPANDER_STATUS, get_expander_status_operation),
         (USER_STATUS, get_user_status_operation),
@@ -689,14 +689,14 @@ def test_expander_dispatcher_contains_expected_entries():
 @pytest.mark.parametrize(
     ("flags", "code"),
     [
-        (STATUS_CODE, "PBF1"),
-        (STATUS_CODE, "PBR1"),
-        (STATUS_CODE, "PA"),
-        (STATUS_CODE, "PC"),
-        (STATUS_CODE, "FA"),
-        (STATUS_CODE, "FC"),
-        (STATUS_CODE, "MA"),
-        (STATUS_CODE, "MC"),
+        (CODE_STATUS, "PBF1"),
+        (CODE_STATUS, "PBR1"),
+        (CODE_STATUS, "PA"),
+        (CODE_STATUS, "PC"),
+        (CODE_STATUS, "FA"),
+        (CODE_STATUS, "FC"),
+        (CODE_STATUS, "MA"),
+        (CODE_STATUS, "MC"),
         (NUMBERED_STATUS, "EA"),
         (NUMBERED_STATUS, "ES"),
     ],
@@ -705,7 +705,7 @@ def test_protocol_messages_not_implemented(
     flags,
     code,
 ):
-    if flags == STATUS_CODE:
+    if flags == CODE_STATUS:
         status = make_status(code)
     else:
         status = make_status(code, number=1)

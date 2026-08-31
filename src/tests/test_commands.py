@@ -17,7 +17,7 @@ from arrowhead_alarm.protocol.commands import (
     unbypass_zone_command,
     version_command,
 )
-from arrowhead_alarm.protocol.models import ArmingMode, PanelVersion, ProtocolMode, VersionInfo
+from arrowhead_alarm.protocol.models import ArmingMode, PanelInfo, ProtocolMode, VersionInfo
 from arrowhead_alarm.protocol.types import Success, Waiting, Result, Failure, Command
 
 T = TypeVar("T")
@@ -49,7 +49,7 @@ class TestVersionCommand:
 
         assert_success(
             result.value,
-            PanelVersion(
+            PanelInfo(
                 model="ESX-1",
                 firmware_version=VersionInfo(10, 2, 426),
                 serial_number="GKRA6PJW",
@@ -72,7 +72,7 @@ class TestVersionCommand:
 
         assert_success(
             result.value,
-            PanelVersion(
+            PanelInfo(
                 model=expected_model,
                 firmware_version=expected_version,
                 serial_number=expected_serial_number,
@@ -640,7 +640,7 @@ class TestOutputStateCommand:
 @pytest.mark.parametrize(
     ("name", "command_factory"),
     [
-        ("version", version_command),
+        ("info", version_command),
         ("mode_1", lambda: mode_command(ProtocolMode.MODE_1)),
         ("arm_button_away", lambda: arm_button_command(ArmingMode.AWAY)),
         ("arm_user_1_pin_123_away", lambda: arm_user_command(1, 123, ArmingMode.AWAY)),
@@ -669,7 +669,7 @@ def test_commands_ignore_unrelated_status_messages(
 @pytest.mark.parametrize(
     ("name", "command_factory"),
     [
-        ("version", version_command),
+        ("info", version_command),
         ("mode_1", lambda: mode_command(ProtocolMode.MODE_1)),
         ("arm_button_away", lambda: arm_button_command(ArmingMode.AWAY)),
         ("arm_user_1_pin_123_away", lambda: arm_user_command(1, 123, ArmingMode.AWAY)),

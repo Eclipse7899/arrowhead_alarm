@@ -9,7 +9,7 @@ from arrowhead_alarm.protocol.exceptions import CommandNotUnderstoodError, Inval
     CommandNotAllowedError, RxBufferOverflowError, TxBufferOverflowError, XModemSessionFailedError, \
     CommandError, ProtocolErrorCode
 from arrowhead_alarm.protocol.models import Response, StatusResponse, OkResponse, ErrorResponse, \
-    VersionInfo, PanelVersion
+    VersionInfo, PanelInfo
 from arrowhead_alarm.protocol.types import Success, Failure, Result
 from arrowhead_alarm.protocol.util import parse_panel_version_string, split_delimited, \
     is_command_error, is_command_ok, convert_to_response, \
@@ -268,35 +268,35 @@ def test_convert_to_response_rejects_unknown_response(data: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("version", "expected"),
+    ("info", "expected"),
     [
         (
-            "AA-123 F/W Ver. 1.2.3 (ABC123)",
-            PanelVersion(
+                "AA-123 F/W Ver. 1.2.3 (ABC123)",
+                PanelInfo(
                 model="AA-123",
                 firmware_version=VersionInfo(1, 2, 3),
                 serial_number="ABC123",
             ),
         ),
         (
-            "MODEL F/W Ver. 0.0.0 (SERIAL)",
-            PanelVersion(
+                "MODEL F/W Ver. 0.0.0 (SERIAL)",
+                PanelInfo(
                 model="MODEL",
                 firmware_version=VersionInfo(0, 0, 0),
                 serial_number="SERIAL",
             ),
         ),
         (
-            "ABC-DEF F/W Ver. 10.20.30 (123456789)",
-            PanelVersion(
+                "ABC-DEF F/W Ver. 10.20.30 (123456789)",
+                PanelInfo(
                 model="ABC-DEF",
                 firmware_version=VersionInfo(10, 20, 30),
                 serial_number="123456789",
             ),
         ),
         (
-            "MODEL F/W Ver. 1.2.3 (SERIAL-NUMBER)",
-            PanelVersion(
+                "MODEL F/W Ver. 1.2.3 (SERIAL-NUMBER)",
+                PanelInfo(
                 model="MODEL",
                 firmware_version=VersionInfo(1, 2, 3),
                 serial_number="SERIAL-NUMBER",
@@ -305,17 +305,17 @@ def test_convert_to_response_rejects_unknown_response(data: str) -> None:
     ],
 )
 def test_parse_panel_version_string_returns_panel_version(
-    version: str,
-    expected: PanelVersion,
+    info: str,
+    expected: PanelInfo,
 ) -> None:
-    result = parse_panel_version_string(version)
+    result = parse_panel_version_string(info)
 
     assert isinstance(result, Success)
     assert result.value == expected
 
 
 @pytest.mark.parametrize(
-    "version",
+    "version_string",
     [
         "",
         "MODEL",
@@ -331,13 +331,13 @@ def test_parse_panel_version_string_returns_panel_version(
     ],
 )
 def test_parse_panel_version_string_rejects_invalid_versions(
-    version: str,
+    version_string: str,
 ) -> None:
-    result = parse_panel_version_string(version)
+    result = parse_panel_version_string(version_string)
 
     assert isinstance(result, Failure)
     assert result.error.args == (
-        f"Waiting version string format: {version}",
+        f"Waiting version string format: {version_string}",
     )
 
 
@@ -347,7 +347,7 @@ def test_parse_panel_version_string_strips_surrounding_whitespace() -> None:
     result = parse_panel_version_string(version)
 
     assert isinstance(result, Success)
-    assert result.value == PanelVersion(
+    assert result.value == PanelInfo(
         model="MODEL",
         firmware_version=VersionInfo(1, 2, 3),
         serial_number="SERIAL",
@@ -359,9 +359,9 @@ def test_version_parsing():
     version_result = parse_panel_version_string(version_output)
     assert isinstance(version_result, Success)
     assert version_result.value.model == "ECi"
-    assert version_result.value.firmware_version.major_version == 10
-    assert version_result.value.firmware_version.minor_version == 3
-    assert version_result.value.firmware_version.patch_version == 52
+    assert version_result.value.firmware_version.major == 10
+    assert version_result.value.firmware_version.minor == 3
+    assert version_result.value.firmware_version.patch == 52
 
 
 def test_version_parsing_with_unexpected_format():
@@ -826,17 +826,6 @@ def test_parse_panel_version_string_returns_expected_version_info() -> None:
     assert result.value.firmware_version == VersionInfo(1, 2, 3)
     assert result.value.model == "MODEL"
     assert result.value.serial_number == "SERIAL"
-
-
-def test_status_response_contains_only_expected_fields() -> None:
-    expected_fields = {
-        "code",
-        "number",
-        "expander_code",
-        "expander_number",
-        "user_number",
-        "timestamp",
-    }
 
 
 @pytest.mark.parametrize(

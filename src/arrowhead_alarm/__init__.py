@@ -10,7 +10,7 @@ from .protocol.models import (
     ArmingMode,
     Output,
     PanelState,
-    PanelVersion,
+    PanelInfo,
     VersionInfo,
     Zone,
 )
@@ -31,6 +31,6 @@ __all__ = [
     "ArmingMode",
     "TcpTransport",
     "LoginCredentials",
-    "PanelVersion",
+    "PanelInfo",
     "VersionInfo",
 ]

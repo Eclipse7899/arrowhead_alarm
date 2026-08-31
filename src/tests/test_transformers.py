@@ -6,7 +6,7 @@ from arrowhead_alarm.protocol.models import (
     AlarmState,
     ErrorResponse,
     OkResponse,
-    PanelVersion,
+    PanelInfo,
     ProtocolMode,
     Response,
     VersionInfo,
@@ -146,24 +146,24 @@ def test_cmd_result_transformer_error(
     ("data", "expected"),
     [
         (
-            '"ECi F/W Ver. 10.3.52 (WR5SPLS1)"',
-            PanelVersion(
+                '"ECi F/W Ver. 10.3.52 (WR5SPLS1)"',
+                PanelInfo(
                 model="ECi",
                 firmware_version=VersionInfo(10, 3, 52),
                 serial_number="WR5SPLS1",
             ),
         ),
         (
-            "ECi F/W Ver. 10.3.52 (WR5SPLS1)",
-            PanelVersion(
+                "ECi F/W Ver. 10.3.52 (WR5SPLS1)",
+                PanelInfo(
                 model="ECi",
                 firmware_version=VersionInfo(10, 3, 52),
                 serial_number="WR5SPLS1",
             ),
         ),
         (
-            '  "ECi F/W Ver. 1.2.3 (ABC123)"  ',
-            PanelVersion(
+                '  "ECi F/W Ver. 1.2.3 (ABC123)"  ',
+                PanelInfo(
                 model="ECi",
                 firmware_version=VersionInfo(1, 2, 3),
                 serial_number="ABC123",
@@ -173,7 +173,7 @@ def test_cmd_result_transformer_error(
 )
 def test_create_version_transformer_success(
     data: str,
-    expected: PanelVersion,
+    expected: PanelInfo,
 ) -> None:
     result = create_version_transformer(data)
 

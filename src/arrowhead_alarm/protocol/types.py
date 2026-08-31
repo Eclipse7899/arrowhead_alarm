@@ -24,6 +24,7 @@ _F = TypeVar("_F")
 
 Transformer: TypeAlias = Callable[[_T], _U]
 
+
 class ResultBase(ABC, Generic[_T, _E]):
     """Abstract base class for Result types."""
 

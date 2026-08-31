@@ -17,7 +17,7 @@ from ..protocol.commands import (
     version_command,
 )
 from ..protocol.defaults import get_default_state
-from ..protocol.models import PanelState, PanelVersion, ProtocolMode
+from ..protocol.models import PanelInfo, PanelState, ProtocolMode
 from ..protocol.transformers import panel_operation_transformer
 from ..transport.authenticated_session import AuthenticatedSession
 from ..transport.command_client import CommandClient
@@ -57,7 +57,7 @@ class ProtocolClient(ABC):
 
         self._state: PanelState = get_default_state()
         self._client = CommandClient(session)
-        self.version: PanelVersion | None = None
+        self.version: PanelInfo | None = None
         self.state_publisher: Publisher[PanelState] = Publisher()
 
     @property
@@ -75,7 +75,7 @@ class ProtocolClient(ABC):
         """Connect the protocol client to the alarm panel."""
         await asyncio.wait_for(self._client.connect(), timeout=self._connection_timeout)
         await self._set_mode()
-        self.version = await self.query_version()
+        self.version = await self.query_info()
         self._client.subscribe(self._handle_event)
 
     async def disconnect(self) -> None:
@@ -107,14 +107,14 @@ class ProtocolClient(ABC):
             _LOGGER.error("Error setting protocol mode: %s", result.error)
             raise result.error
 
-    async def query_version(self) -> PanelVersion:
-        """Query the alarm panel version.
+    async def query_info(self) -> PanelInfo:
+        """Query the alarm panel info.
 
         Returns:
-            The panel version information.
+            The panel info information.
 
         Raises:
-            Exception: If querying the version fails.
+            Exception: If querying the info fails.
         """
         resp = await self._send_command(version_command())
         if resp.is_ok:

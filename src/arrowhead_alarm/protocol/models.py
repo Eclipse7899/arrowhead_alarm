@@ -1,20 +1,11 @@
 """Types used in the Arrowhead Alarm protocol."""
 
-import sys
 from dataclasses import dataclass, replace
 from enum import Enum, IntFlag, auto
 from functools import total_ordering
 from typing import (
     TypeAlias,
-    TypeVar,
 )
-
-if sys.version_info >= (3, 11):
-    pass
-else:
-    pass
-
-_T = TypeVar("_T")
 
 
 class StatusFlags(IntFlag):
@@ -28,11 +19,11 @@ class StatusFlags(IntFlag):
     TIMESTAMP = auto()
 
 
-STATUS_CODE = StatusFlags.CODE
+CODE_STATUS = StatusFlags.CODE
 
-NUMBERED_STATUS = STATUS_CODE | StatusFlags.NUMBER
+NUMBERED_STATUS = CODE_STATUS | StatusFlags.NUMBER
 
-EXPANDER_STATUS = STATUS_CODE | StatusFlags.EXPANDER_CODE | StatusFlags.EXPANDER_NUMBER
+EXPANDER_STATUS = CODE_STATUS | StatusFlags.EXPANDER_CODE | StatusFlags.EXPANDER_NUMBER
 
 USER_STATUS = NUMBERED_STATUS | StatusFlags.USER_NUMBER
 
@@ -61,62 +52,25 @@ class ProtocolMode(Enum):
 class VersionInfo:
     """Version information."""
 
-    major_version: int
-    minor_version: int
-    patch_version: int
+    major: int
+    minor: int
+    patch: int
 
     def _as_tuple(self) -> tuple[int, int, int]:
-        return self.major_version, self.minor_version, self.patch_version
+        return (
+            self.major,
+            self.minor,
+            self.patch,
+        )
 
     def __lt__(self, other: "VersionInfo") -> bool:
-        """Check if this VersionInfo is less than another.
-
-        Args:
-            other: The other VersionInfo instance to compare.
-
-        Returns: True if this instance is less than the other, False otherwise.
-
-        """
+        """Check if this version is less than another."""
         return self._as_tuple() < other._as_tuple()
-
-    def __gt__(self, other: "VersionInfo") -> bool:
-        """Check if this VersionInfo is greater than another.
-
-        Args:
-            other: The other VersionInfo instance to compare.
-
-        Returns: True if this instance is greater than the other, False otherwise.
-
-        """
-        return self._as_tuple() > other._as_tuple()
-
-    def __le__(self, other: "VersionInfo") -> bool:
-        """Check if this VersionInfo is less than or equal to another.
-
-        Args:
-            other: The other VersionInfo instance to compare.
-        Returns: True if this instance is less than or \
-        equal to the other, False otherwise.
-
-        """
-        return self._as_tuple() <= other._as_tuple()
-
-    def __ge__(self, other: "VersionInfo") -> bool:
-        """Check if this VersionInfo is greater than or equal to another.
-
-        Args:
-            other: The other VersionInfo instance to compare.
-
-        Returns: True if this instance is greater than or \
-        equal to the other, False otherwise.
-
-        """
-        return self._as_tuple() >= other._as_tuple()
 
 
 @dataclass
-class PanelVersion:
-    """Panel version information."""
+class PanelInfo:
+    """Information about the alarm panel."""
 
     model: str
     firmware_version: VersionInfo
@@ -181,9 +135,9 @@ class ArmingMode(Enum):
 
 @dataclass
 class Area:
-    """Alarm Area status_response."""
+    """Alarm area state."""
 
-    area_number: int
+    number: int
     state: AlarmState
     ready_to_arm: bool
 
@@ -198,15 +152,15 @@ class Area:
 
 @dataclass
 class Zone:
-    """Alarm Zone status_response."""
+    """Alarm zone state."""
 
-    zone_number: int
+    number: int
     supervise_alarm: bool
     trouble_alarm: bool
     bypassed: bool
     alarm: bool
     radio_battery_low: bool
-    zone_closed: bool
+    closed: bool
     sensor_watch_alarm: bool
 
     def set_supervise_alarm(self, value: bool) -> "Zone":
@@ -231,7 +185,7 @@ class Zone:
 
     def set_closed(self, value: bool) -> "Zone":
         """Set the zone closed state."""
-        return replace(self, zone_closed=value)
+        return replace(self, closed=value)
 
     def set_sensor_watch_alarm(self, value: bool) -> "Zone":
         """Set the sensor watch alarm state."""
@@ -242,15 +196,15 @@ class Zone:
 class Expander:
     """Expander state."""
 
-    expander_id: int
-    tamper_alarm_triggered: bool
+    number: int
+    tamper_fault: bool
     mains_fault: bool
     battery_fault: bool
     fuse_fault: bool
 
-    def set_tamper_alarm_triggered(self, value: bool) -> "Expander":
-        """Set the tamper alarm state."""
-        return replace(self, tamper_alarm_triggered=value)
+    def set_tamper_fault(self, value: bool) -> "Expander":
+        """Set the tamper fault state."""
+        return replace(self, tamper_fault=value)
 
     def set_mains_fault(self, value: bool) -> "Expander":
         """Set the mains fault state."""
@@ -267,9 +221,9 @@ class Expander:
 
 @dataclass
 class Output:
-    """Alarm Output status_response."""
+    """Alarm Output model."""
 
-    output_number: int
+    number: int
     on: bool
 
     def set_on(self, value: bool) -> "Output":
@@ -279,19 +233,17 @@ class Output:
 
 @dataclass
 class PanelState:
-    """Overall status_response of the alarm panel."""
+    """Overall status of the alarm panel."""
 
+    info: PanelInfo | None
     ready_to_arm: bool
     battery_fault: bool
     mains_fault: bool
-    tamper_alarm_triggered: bool
-    line_fault: bool
+    tamper_fault: bool
     dialer_fault: bool
     dialer_line_fault: bool
     fuse_fault: bool
     monitoring_station_active: bool
-    dialer_active: bool
-    code_tamper: bool
     receiver_fault: bool | None
     pendant_battery_fault: bool | None
     rf_battery_low: bool | None
@@ -302,6 +254,10 @@ class PanelState:
     zone_expanders: dict[int, Expander]
     output_expanders: dict[int, Expander]
     prox_expanders: dict[int, Expander]
+
+    def set_info(self, info: PanelInfo) -> "PanelState":
+        """Set the panel info."""
+        return replace(self, info=info)
 
     def set_ready_to_arm(self, value: bool) -> "PanelState":
         """Set whether the panel is ready to arm."""
@@ -315,13 +271,9 @@ class PanelState:
         """Set the panel mains fault state."""
         return replace(self, mains_fault=value)
 
-    def set_tamper_alarm_triggered(self, value: bool) -> "PanelState":
-        """Set the panel tamper alarm state."""
-        return replace(self, tamper_alarm_triggered=value)
-
-    def set_line_fault(self, value: bool) -> "PanelState":
-        """Set the panel line fault state."""
-        return replace(self, line_fault=value)
+    def set_tamper_fault(self, value: bool) -> "PanelState":
+        """Set the panel tamper fault state."""
+        return replace(self, tamper_fault=value)
 
     def set_dialer_fault(self, value: bool) -> "PanelState":
         """Set the panel dialer fault state."""
@@ -338,14 +290,6 @@ class PanelState:
     def set_monitoring_station_active(self, value: bool) -> "PanelState":
         """Set whether the monitoring station is active."""
         return replace(self, monitoring_station_active=value)
-
-    def set_dialer_active(self, value: bool) -> "PanelState":
-        """Set whether the dialer is active."""
-        return replace(self, dialer_active=value)
-
-    def set_code_tamper(self, value: bool) -> "PanelState":
-        """Set the code tamper state."""
-        return replace(self, code_tamper=value)
 
     def set_receiver_fault(self, value: bool | None) -> "PanelState":
         """Set the receiver fault state."""
@@ -571,16 +515,16 @@ class PanelState:
             zone_expanders=self.zone_expanders | {expander_number: expander},
         )
 
-    def set_zone_expander_tamper_alarm_triggered(
+    def set_zone_expander_tamper_fault(
         self,
         expander_number: int,
         value: bool,
     ) -> "PanelState":
-        """Set the tamper alarm state of a zone expander."""
+        """Set the tamper fault state of a zone expander."""
         if expander_number not in self.zone_expanders:
             return self
 
-        expander = self.zone_expanders[expander_number].set_tamper_alarm_triggered(value)
+        expander = self.zone_expanders[expander_number].set_tamper_fault(value)
 
         return replace(
             self,
@@ -635,16 +579,16 @@ class PanelState:
             output_expanders=self.output_expanders | {expander_number: expander},
         )
 
-    def set_output_expander_tamper_alarm_triggered(
+    def set_output_expander_tamper_fault(
         self,
         expander_number: int,
         value: bool,
     ) -> "PanelState":
-        """Set the tamper alarm state of an output expander."""
+        """Set the tamper fault state of an output expander."""
         if expander_number not in self.output_expanders:
             return self
 
-        expander = self.output_expanders[expander_number].set_tamper_alarm_triggered(value)
+        expander = self.output_expanders[expander_number].set_tamper_fault(value)
 
         return replace(
             self,
@@ -699,16 +643,16 @@ class PanelState:
             prox_expanders=self.prox_expanders | {expander_number: expander},
         )
 
-    def set_prox_expander_tamper_alarm_triggered(
+    def set_prox_expander_tamper_fault(
         self,
         expander_number: int,
         value: bool,
     ) -> "PanelState":
-        """Set the tamper alarm state of a prox expander."""
+        """Set the tamper fault state of a prox expander."""
         if expander_number not in self.prox_expanders:
             return self
 
-        expander = self.prox_expanders[expander_number].set_tamper_alarm_triggered(value)
+        expander = self.prox_expanders[expander_number].set_tamper_fault(value)
 
         return replace(
             self,
