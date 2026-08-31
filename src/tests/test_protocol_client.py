@@ -850,3 +850,30 @@ async def test_send_command_timeout(client, timeout):
 
     wait_for.assert_awaited_once()
     assert wait_for.call_args.kwargs == {"timeout": timeout}
+
+
+@pytest.mark.asyncio
+async def test_client_initializes_version_on_connect(
+    client: TestProtocolClient,
+    command_client: MagicMock,
+) -> None:
+    version = PanelVersion(
+        model="ECi",
+        firmware_version=VersionInfo(10, 3, 52),
+        serial_number="WR5SPLS1",
+    )
+    command_client.request.return_value = successful_result()
+
+    client.query_version = AsyncMock(return_value=version)
+
+    with patch(
+        "arrowhead_alarm.api.protocol_client.mode_command",
+        return_value="MODE COMMAND",
+    ), patch(
+        "arrowhead_alarm.api.protocol_client.version_command",
+        return_value="VERSION COMMAND",
+    ):
+        await client.connect()
+
+    client.query_version.assert_awaited_once_with()
+    assert client.version is version
