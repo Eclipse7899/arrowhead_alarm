@@ -60,8 +60,12 @@ class CommandClient:
     async def disconnect(self) -> None:
         """Disconnect the session and cancel the background read worker."""
         if isinstance(self.state, ClientConnected):
-            await self._session.disconnect()
             self.state.read_worker.cancel()
+            try:
+                await self.state.read_worker
+            except asyncio.CancelledError:
+                pass
+            await self._session.disconnect()
             self._set_state(ClientDisconnected())
 
     async def _read_worker(self) -> None:
