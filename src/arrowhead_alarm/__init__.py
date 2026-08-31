@@ -9,8 +9,8 @@ from .protocol.models import (
     Area,
     ArmingMode,
     Output,
-    PanelState,
     PanelInfo,
+    PanelState,
     VersionInfo,
     Zone,
 )
